@@ -15,6 +15,7 @@ import {
   addPhoto,
   fetchPortfolio,
   photoProblem,
+  pickerOptions,
   removePhoto,
   updateCaption,
   type PortfolioItem,
@@ -121,14 +122,13 @@ function PortfolioEditor({
           return;
         }
       }
-      result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 });
+      result = await ImagePicker.launchCameraAsync(pickerOptions);
     } else {
       // On the web the picker must open straight from the press, so nothing is awaited first.
       result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        ...pickerOptions,
         allowsMultipleSelection: true,
         selectionLimit: room,
-        quality: 0.8,
       });
     }
     if (result.canceled) return;

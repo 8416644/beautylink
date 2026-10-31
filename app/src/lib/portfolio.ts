@@ -1,4 +1,5 @@
-import type { ImagePickerAsset } from 'expo-image-picker';
+import type { ImagePickerAsset, ImagePickerOptions } from 'expo-image-picker';
+import { Platform } from 'react-native';
 
 import { supabase } from './supabase';
 
@@ -28,6 +29,21 @@ export async function fetchPortfolio(proId: string): Promise<PortfolioItem[]> {
   return data;
 }
 
+// Picker options shared by the gallery and the camera. A phone returns the photo's data as
+// base64, which addPhoto uploads.
+export const pickerOptions = {
+  mediaTypes: ['images'],
+  quality: 0.8,
+  base64: Platform.OS !== 'web',
+} satisfies ImagePickerOptions;
+
+function base64ToBytes(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
 // Why a picked photo cannot be uploaded, or null when it can.
 export function photoProblem(asset: ImagePickerAsset): string | null {
   const type = asset.mimeType ?? asset.file?.type;
@@ -41,8 +57,10 @@ export function photoProblem(asset: ImagePickerAsset): string | null {
 export async function addPhoto(proId: string, asset: ImagePickerAsset, sort: number) {
   const type = (asset.mimeType ?? asset.file?.type)!;
   const path = `${proId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${TYPES[type]}`;
-  // On the web the picker gives a File; on a phone the photo is read from its local uri.
-  const body = asset.file ?? (await (await fetch(asset.uri)).arrayBuffer());
+  // On the web the picker gives a File. On a phone, reading the local uri with fetch gives
+  // an empty body, so the picker is asked for the photo as base64 (see pickerOptions).
+  const body = asset.file ?? (asset.base64 ? base64ToBytes(asset.base64) : null);
+  if (!body) throw new Error('The picked photo has no data');
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
