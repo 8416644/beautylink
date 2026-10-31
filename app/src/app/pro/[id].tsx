@@ -1,9 +1,11 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
+import { PhotoViewer } from '@/components/photo-viewer';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -62,6 +64,7 @@ export default function ProPageScreen() {
 type ProPageProps = { pro: PublicPro; priceList: Service[]; photos: PortfolioItem[] };
 
 function ProPage({ pro, priceList, photos }: ProPageProps) {
+  const [viewing, setViewing] = useState<PortfolioItem | null>(null);
   const place = [pro.neighborhood, pro.city].filter(Boolean).join(', ');
   const where = [
     pro.works_at_salon && 'בסלון',
@@ -126,15 +129,21 @@ function ProPage({ pro, priceList, photos }: ProPageProps) {
         <Section title="תיק עבודות">
           <View style={styles.gallery}>
             {photos.map((photo) => (
-              <Image
+              <Pressable
                 key={photo.id}
-                source={{ uri: photo.media_url }}
                 style={styles.photo}
-                contentFit="cover"
-                accessibilityLabel={photo.caption ?? 'עבודה מתיק העבודות'}
-              />
+                onPress={() => setViewing(photo)}
+                accessibilityRole="button"
+                accessibilityLabel={photo.caption ?? 'עבודה מתיק העבודות'}>
+                <Image source={{ uri: photo.media_url }} style={styles.photoImage} contentFit="cover" />
+              </Pressable>
             ))}
           </View>
+          <PhotoViewer
+            uri={viewing?.media_url ?? null}
+            caption={viewing?.caption}
+            onClose={() => setViewing(null)}
+          />
         </Section>
       )}
 
@@ -270,7 +279,12 @@ const styles = StyleSheet.create({
     width: '31%',
     aspectRatio: 1,
     borderRadius: Radius.small,
+    overflow: 'hidden',
     backgroundColor: Colors.placeholder,
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
   },
   priceRow: {
     flexDirection: 'row',

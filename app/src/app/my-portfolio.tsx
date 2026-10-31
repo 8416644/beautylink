@@ -2,10 +2,11 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { PhotoViewer } from '@/components/photo-viewer';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
@@ -107,6 +108,9 @@ function PortfolioEditor({
 }) {
   const [progress, setProgress] = useState<string | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
+  // Picked photos waiting for her to look them over and approve the upload.
+  const [pending, setPending] = useState<ImagePicker.ImagePickerAsset[]>([]);
+  const [viewing, setViewing] = useState<string | null>(null);
   const room = MAX_PHOTOS - items.length;
 
   async function pick(source: 'library' | 'camera') {
@@ -133,20 +137,28 @@ function PortfolioEditor({
     }
     if (result.canceled) return;
 
-    const assets = result.assets.slice(0, room);
+    // Photos that cannot be uploaded are reported now, before she reviews the rest.
     const problems: string[] = [];
-    if (result.assets.length > room) {
-      problems.push(`אפשר עד ${MAX_PHOTOS} תמונות, ולכן הועלו רק ${room} הראשונות.`);
+    const picked = result.assets.filter((asset, i) => {
+      const problem = photoProblem(asset);
+      if (problem) problems.push((result.assets.length > 1 ? `תמונה ${i + 1}: ` : '') + problem);
+      return problem === null;
+    });
+    if (picked.length > room) {
+      problems.push(`אפשר עד ${MAX_PHOTOS} תמונות, ולכן נבחרו רק ${room} הראשונות.`);
     }
+    setMessages(problems);
+    setPending(picked.slice(0, room));
+  }
+
+  async function upload() {
+    const assets = pending;
+    setPending([]);
+    const problems: string[] = [];
     let sort = items.reduce((max, item) => Math.max(max, item.sort), 0);
     for (const [i, asset] of assets.entries()) {
       setProgress(`מעלים תמונה ${i + 1} מתוך ${assets.length}…`);
       const label = assets.length > 1 ? `תמונה ${i + 1}: ` : '';
-      const problem = photoProblem(asset);
-      if (problem) {
-        problems.push(label + problem);
-        continue;
-      }
       try {
         sort += 1;
         await addPhoto(proId, asset, sort);
@@ -168,6 +180,32 @@ function PortfolioEditor({
         <Card>
           <Text>{progress}</Text>
         </Card>
+      ) : pending.length > 0 ? (
+        <View style={styles.review}>
+          <Text variant="heading">בדיקה לפני העלאה</Text>
+          <Text variant="small" muted>
+            לוחצים על תמונה כדי לראות אותה בגדול ולהגדיל. מה שלא מתאים אפשר להסיר.
+          </Text>
+          <View style={styles.grid}>
+            {pending.map((asset) => (
+              <View key={asset.uri} style={styles.tile}>
+                <Pressable onPress={() => setViewing(asset.uri)} accessibilityRole="button" accessibilityLabel="הצגה בגדול">
+                  <Image source={{ uri: asset.uri }} style={styles.photo} contentFit="cover" />
+                </Pressable>
+                <Chip
+                  label="הסרה"
+                  selected={false}
+                  onPress={() => setPending((p) => p.filter((a) => a.uri !== asset.uri))}
+                />
+              </View>
+            ))}
+          </View>
+          <Button
+            label={pending.length === 1 ? 'אישור והעלאה' : `אישור והעלאה של ${pending.length} תמונות`}
+            onPress={upload}
+          />
+          <Button label="ביטול" variant="secondary" onPress={() => setPending([])} />
+        </View>
       ) : room > 0 ? (
         <View style={styles.actions}>
           <Button label="הוספת תמונות מהגלריה" onPress={() => pick('library')} />
@@ -197,6 +235,24 @@ function PortfolioEditor({
           ))}
         </View>
       )}
+
+      <PhotoViewer
+        uri={viewing}
+        onClose={() => setViewing(null)}
+        footer={
+          <>
+            <Button label="נראית טוב" onPress={() => setViewing(null)} />
+            <Button
+              label="הסרה מההעלאה"
+              variant="secondary"
+              onPress={() => {
+                setPending((p) => p.filter((a) => a.uri !== viewing));
+                setViewing(null);
+              }}
+            />
+          </>
+        }
+      />
     </Screen>
   );
 }
@@ -206,6 +262,7 @@ function PhotoTile({ item, onChanged }: { item: PortfolioItem; onChanged: () => 
   const [caption, setCaption] = useState(item.caption ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [enlarged, setEnlarged] = useState(false);
 
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -223,7 +280,14 @@ function PhotoTile({ item, onChanged }: { item: PortfolioItem; onChanged: () => 
 
   return (
     <View style={styles.tile}>
-      <Image source={{ uri: item.media_url }} style={styles.photo} contentFit="cover" />
+      <Pressable onPress={() => setEnlarged(true)} accessibilityRole="button" accessibilityLabel="הצגה בגדול">
+        <Image source={{ uri: item.media_url }} style={styles.photo} contentFit="cover" />
+      </Pressable>
+      <PhotoViewer
+        uri={enlarged ? item.media_url : null}
+        caption={item.caption}
+        onClose={() => setEnlarged(false)}
+      />
       {mode === 'caption' ? (
         <View style={styles.actions}>
           <TextField label="תיאור קצר" value={caption} onChangeText={setCaption} />
@@ -266,6 +330,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  review: {
+    gap: Spacing.three,
+    padding: Spacing.four,
+    borderRadius: Radius.medium,
+    backgroundColor: Colors.secondaryTint,
   },
   grid: {
     flexDirection: 'row',
