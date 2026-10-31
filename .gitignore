@@ -1,0 +1,5 @@
+# Each folder keeps its own ignore rules too (see app/.gitignore).
+node_modules/
+.env*.local
+.claude/settings.local.json
+.DS_Store
