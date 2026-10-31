@@ -9,6 +9,7 @@ import { PhotoViewer } from '@/components/photo-viewer';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { fetchWorkingHours, formatShifts, WEEKDAYS, type Shift } from '@/lib/hours';
 import { isWebLink } from '@/lib/links';
 import { fetchPortfolio, type PortfolioItem } from '@/lib/portfolio';
 import { fetchPublicPro, type PublicPro } from '@/lib/pros';
@@ -19,12 +20,13 @@ import { useAsync } from '@/lib/use-async';
 export default function ProPageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, reload } = useAsync(id ?? null, async () => {
-    const [pro, priceList, photos] = await Promise.all([
+    const [pro, priceList, photos, hours] = await Promise.all([
       fetchPublicPro(id!),
       fetchActiveServices(id!),
       fetchPortfolio(id!),
+      fetchWorkingHours(id!),
     ]);
-    return pro ? { pro, priceList, photos } : null;
+    return pro ? { pro, priceList, photos, hours } : null;
   });
 
   if (state.status === 'loading') {
@@ -57,13 +59,18 @@ export default function ProPageScreen() {
     );
   }
 
-  const { pro, priceList, photos } = state.data;
-  return <ProPage pro={pro} priceList={priceList} photos={photos} />;
+  const { pro, priceList, photos, hours } = state.data;
+  return <ProPage pro={pro} priceList={priceList} photos={photos} hours={hours} />;
 }
 
-type ProPageProps = { pro: PublicPro; priceList: Service[]; photos: PortfolioItem[] };
+type ProPageProps = {
+  pro: PublicPro;
+  priceList: Service[];
+  photos: PortfolioItem[];
+  hours: Shift[];
+};
 
-function ProPage({ pro, priceList, photos }: ProPageProps) {
+function ProPage({ pro, priceList, photos, hours }: ProPageProps) {
   const [viewing, setViewing] = useState<PortfolioItem | null>(null);
   const place = [pro.neighborhood, pro.city].filter(Boolean).join(', ');
   const where = [
@@ -166,6 +173,26 @@ function ProPage({ pro, priceList, photos }: ProPageProps) {
                 <Text variant="smallBold">{formatPrice(service.price_ils)}</Text>
               </View>
             ))}
+          </View>
+        </Section>
+      )}
+
+      {hours.length > 0 && (
+        <Section title="שעות פעילות">
+          <View style={styles.card}>
+            {WEEKDAYS.map((day, weekday) => {
+              const today = hours.filter((s) => s.weekday === weekday);
+              return (
+                <View key={day} style={styles.hoursRow}>
+                  <Text variant="smallBold" style={styles.hoursDay}>
+                    {day}
+                  </Text>
+                  <Text variant="small" muted={today.length === 0} style={styles.hoursTimes}>
+                    {today.length > 0 ? formatShifts(today) : 'לא עובדת'}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         </Section>
       )}
@@ -285,6 +312,16 @@ const styles = StyleSheet.create({
   photoImage: {
     width: '100%',
     height: '100%',
+  },
+  hoursRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+  },
+  hoursDay: {
+    width: 56,
+  },
+  hoursTimes: {
+    flex: 1,
   },
   priceRow: {
     flexDirection: 'row',
