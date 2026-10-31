@@ -69,6 +69,13 @@ export default function ProfileScreen() {
                 onPress={() => router.push('/my-services')}
               />
             )}
+            {pro.status !== 'suspended' && (
+              <Button
+                label="תיק העבודות שלי"
+                variant="secondary"
+                onPress={() => router.push('/my-portfolio')}
+              />
+            )}
           </>
         ) : (
           <>

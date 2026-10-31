@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
@@ -7,6 +8,7 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { isWebLink } from '@/lib/links';
+import { fetchPortfolio, type PortfolioItem } from '@/lib/portfolio';
 import { fetchPublicPro, type PublicPro } from '@/lib/pros';
 import { fetchActiveServices, formatDuration, formatPrice, type Service } from '@/lib/services';
 import { useAsync } from '@/lib/use-async';
@@ -15,8 +17,12 @@ import { useAsync } from '@/lib/use-async';
 export default function ProPageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, reload } = useAsync(id ?? null, async () => {
-    const [pro, priceList] = await Promise.all([fetchPublicPro(id!), fetchActiveServices(id!)]);
-    return pro ? { pro, priceList } : null;
+    const [pro, priceList, photos] = await Promise.all([
+      fetchPublicPro(id!),
+      fetchActiveServices(id!),
+      fetchPortfolio(id!),
+    ]);
+    return pro ? { pro, priceList, photos } : null;
   });
 
   if (state.status === 'loading') {
@@ -49,10 +55,13 @@ export default function ProPageScreen() {
     );
   }
 
-  return <ProPage pro={state.data.pro} priceList={state.data.priceList} />;
+  const { pro, priceList, photos } = state.data;
+  return <ProPage pro={pro} priceList={priceList} photos={photos} />;
 }
 
-function ProPage({ pro, priceList }: { pro: PublicPro; priceList: Service[] }) {
+type ProPageProps = { pro: PublicPro; priceList: Service[]; photos: PortfolioItem[] };
+
+function ProPage({ pro, priceList, photos }: ProPageProps) {
   const place = [pro.neighborhood, pro.city].filter(Boolean).join(', ');
   const where = [
     pro.works_at_salon && 'בסלון',
@@ -113,6 +122,22 @@ function ProPage({ pro, priceList }: { pro: PublicPro; priceList: Service[] }) {
         ) : null}
       </Section>
 
+      {photos.length > 0 && (
+        <Section title="תיק עבודות">
+          <View style={styles.gallery}>
+            {photos.map((photo) => (
+              <Image
+                key={photo.id}
+                source={{ uri: photo.media_url }}
+                style={styles.photo}
+                contentFit="cover"
+                accessibilityLabel={photo.caption ?? 'עבודה מתיק העבודות'}
+              />
+            ))}
+          </View>
+        </Section>
+      )}
+
       {priceList.length > 0 && (
         <Section title="מחירון">
           <View style={styles.card}>
@@ -172,7 +197,7 @@ function ProPage({ pro, priceList }: { pro: PublicPro; priceList: Service[] }) {
       <View style={[styles.card, styles.soon]}>
         <Text variant="smallBold">בקרוב</Text>
         <Text variant="small" muted>
-          תיק עבודות, ביקורות וקביעת תור ישירות מהאפליקציה.
+          ביקורות וקביעת תור ישירות מהאפליקציה.
         </Text>
       </View>
     </Screen>
@@ -235,6 +260,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  gallery: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  photo: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: Radius.small,
+    backgroundColor: Colors.placeholder,
   },
   priceRow: {
     flexDirection: 'row',

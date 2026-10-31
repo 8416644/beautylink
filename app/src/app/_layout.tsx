@@ -59,6 +59,7 @@ export default function RootLayout() {
         <Stack.Screen name="set-password" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="pro/[id]" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="my-services" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="my-portfolio" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="admin" options={{ headerShown: true, title: 'ניהול' }} />
       </Stack>
     </AuthProvider>
