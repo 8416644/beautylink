@@ -63,6 +63,9 @@ export default function ProfileScreen() {
               onPress={() => router.push('/pro-signup')}
             />
             {pro.status !== 'suspended' && (
+              <Button label="היומן שלי" onPress={() => router.push('/my-calendar')} />
+            )}
+            {pro.status !== 'suspended' && (
               <Button
                 label="השירותים והמחירים שלי"
                 variant="secondary"

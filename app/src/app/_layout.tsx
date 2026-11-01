@@ -61,6 +61,10 @@ export default function RootLayout() {
         <Stack.Screen name="my-services" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="my-portfolio" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="my-hours" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="book/[id]" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="my-calendar" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="add-appointment" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="block-time" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="admin" options={{ headerShown: true, title: 'ניהול' }} />
       </Stack>
     </AuthProvider>

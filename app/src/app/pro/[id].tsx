@@ -80,6 +80,7 @@ function ProPage({ pro, priceList, photos, hours }: ProPageProps) {
       `מגיעה אלייך${pro.travel_radius_km ? ` (עד ${pro.travel_radius_km} ק"מ)` : ''}`,
   ].filter((w): w is string => typeof w === 'string');
   const travelFee = Number(pro.travel_fee_ils);
+  const canBook = priceList.length > 0 && hours.length > 0;
   const links = [
     { label: 'אינסטגרם', url: pro.instagram_url },
     { label: 'טיקטוק', url: pro.tiktok_url },
@@ -112,6 +113,10 @@ function ProPage({ pro, priceList, photos, hours }: ProPageProps) {
         {place}
         {pro.years_experience !== null ? ` · ${pro.years_experience} שנות ניסיון` : ''}
       </Text>
+
+      {canBook && (
+        <Button label="קביעת תור" onPress={() => router.push(`/book/${pro.user_id}`)} />
+      )}
 
       {pro.bio ? (
         <View style={styles.card}>
@@ -158,7 +163,13 @@ function ProPage({ pro, priceList, photos, hours }: ProPageProps) {
         <Section title="מחירון">
           <View style={styles.card}>
             {priceList.map((service, i) => (
-              <View key={service.id} style={[styles.priceRow, i > 0 && styles.priceRowBorder]}>
+              <Pressable
+                key={service.id}
+                disabled={!canBook}
+                onPress={() => router.push({ pathname: '/book/[id]', params: { id: pro.user_id, service: service.id } })}
+                accessibilityRole={canBook ? 'button' : undefined}
+                accessibilityHint={canBook ? 'קביעת תור לטיפול הזה' : undefined}
+                style={[styles.priceRow, i > 0 && styles.priceRowBorder]}>
                 <View style={styles.grow}>
                   <Text variant="smallBold">{service.name}</Text>
                   <Text variant="caption" muted>
@@ -171,7 +182,7 @@ function ProPage({ pro, priceList, photos, hours }: ProPageProps) {
                   ) : null}
                 </View>
                 <Text variant="smallBold">{formatPrice(service.price_ils)}</Text>
-              </View>
+              </Pressable>
             ))}
           </View>
         </Section>
@@ -233,7 +244,7 @@ function ProPage({ pro, priceList, photos, hours }: ProPageProps) {
       <View style={[styles.card, styles.soon]}>
         <Text variant="smallBold">בקרוב</Text>
         <Text variant="small" muted>
-          ביקורות וקביעת תור ישירות מהאפליקציה.
+          ביקורות של לקוחות.
         </Text>
       </View>
     </Screen>

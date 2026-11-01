@@ -8,9 +8,11 @@
     "scheme": "beautylink",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.beautylink.app"
     },
     "android": {
+      "package": "com.beautylink.app",
       "adaptiveIcon": {
         "backgroundColor": "#F6E7EC",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

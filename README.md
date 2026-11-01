@@ -39,3 +39,15 @@
 6. תזכורות פוש
 7. ביקורות ומועדפים
 8. דשבורד מנהל בסיסי
+
+## עדכון מסד הנתונים
+
+כל קובץ חדש בתיקייה `supabase/migrations` צריך להריץ פעם אחת ב-Supabase: בלוח הבקרה נכנסים ל-SQL Editor, מדביקים את כל תוכן הקובץ ולוחצים Run. מריצים לפי סדר השמות. אפשר להריץ קובץ שוב בלי נזק.
+
+## התקנת האפליקציה בטלפון בלי המחשב (EAS Build)
+
+ההגדרות נמצאות ב-`app/eas.json`. הפרופיל `preview` בונה קובץ APK לאנדרואיד שמתקינים ישירות בטלפון.
+
+1. ב-expo.dev, בפרויקט, תחת Environment variables, מוסיפים לסביבה `preview` את `EXPO_PUBLIC_SUPABASE_URL` ואת `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (אותם ערכים כמו ב-`app/.env.local`).
+2. בפעם הראשונה, מתוך תיקיית `app`: `npx eas-cli@latest init` (מחבר את הפרויקט לחשבון).
+3. בנייה: `npx eas-cli@latest build --profile preview --platform android`. בסוף מתקבל קישור להורדה ולהתקנה.
