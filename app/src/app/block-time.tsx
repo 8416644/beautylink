@@ -4,13 +4,13 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
-import { DayPicker } from '@/components/day-picker';
+import { MonthCalendar } from '@/components/month-calendar';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { Colors, Spacing } from '@/constants/theme';
 import { addTimeOff, errorText, TIME_OFF_TEXT, type TimeOff } from '@/lib/appointments';
-import { dayLabel, daysFrom, today } from '@/lib/dates';
+import { dayLabel, monthOf, today } from '@/lib/dates';
 import { parseTime } from '@/lib/hours';
 
 const KINDS: TimeOff['kind'][] = ['break', 'vacation', 'other'];
@@ -20,7 +20,7 @@ export default function BlockTimeScreen() {
   const params = useLocalSearchParams<{ day?: string }>();
   const initialDay = params.day && /^\d{4}-\d{2}-\d{2}$/.test(params.day) ? params.day : today();
   const [day, setDay] = useState(initialDay);
-  const [stripStart] = useState(() => (initialDay < today() ? initialDay : today()));
+  const [month, setMonth] = useState(() => monthOf(initialDay));
   const [wholeDay, setWholeDay] = useState(false);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -53,7 +53,17 @@ export default function BlockTimeScreen() {
       <Text muted>בזמן החסום לקוחות לא יוכלו לקבוע תור. תורים שכבר נקבעו לא מתבטלים.</Text>
 
       <View style={styles.section}>
-        <DayPicker days={daysFrom(stripStart, 60)} selected={day} onSelect={setDay} />
+        <MonthCalendar
+          month={month}
+          onMonthChange={(m) => {
+            setMonth(m);
+            setDay(monthOf(today()) === m ? today() : `${m}-01`);
+          }}
+          minMonth={monthOf(today())}
+          selected={day}
+          onSelect={setDay}
+          isAvailable={(d) => d >= today()}
+        />
         <Text variant="smallBold">{dayLabel(day)}</Text>
         <View style={styles.chips}>
           <Chip label="חלק מהיום" selected={!wholeDay} onPress={() => setWholeDay(false)} />

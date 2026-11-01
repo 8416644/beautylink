@@ -3,14 +3,14 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
-import { DayPicker } from '@/components/day-picker';
+import { MonthCalendar } from '@/components/month-calendar';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { addManualAppointment, errorText } from '@/lib/appointments';
 import { useAuth } from '@/lib/auth';
-import { dayLabel, daysFrom, today } from '@/lib/dates';
+import { dayLabel, monthOf, today } from '@/lib/dates';
 import { parseTime } from '@/lib/hours';
 import { fetchOwnServices, formatDuration, formatPrice, type Service } from '@/lib/services';
 import { useAsync } from '@/lib/use-async';
@@ -62,7 +62,7 @@ function Form({ services, initialDay }: { services: Service[]; initialDay: strin
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stripStart] = useState(() => (initialDay < today() ? initialDay : today()));
+  const [month, setMonth] = useState(() => monthOf(initialDay));
 
   const parsed = parseTime(time);
   const ready = parsed !== null && name.trim() !== '';
@@ -110,7 +110,15 @@ function Form({ services, initialDay }: { services: Service[]; initialDay: strin
 
       <View style={styles.section}>
         <Text variant="heading">מתי</Text>
-        <DayPicker days={daysFrom(stripStart, 60)} selected={day} onSelect={setDay} />
+        <MonthCalendar
+          month={month}
+          onMonthChange={(m) => {
+            setMonth(m);
+            setDay(monthOf(today()) === m ? today() : `${m}-01`);
+          }}
+          selected={day}
+          onSelect={setDay}
+        />
         <Text variant="smallBold">{dayLabel(day)}</Text>
         <TextField
           label="שעה"

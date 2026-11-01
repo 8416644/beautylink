@@ -57,15 +57,43 @@ export function dayLabel(day: string) {
   return `יום ${WEEKDAYS[weekdayOf(day)]}, ${shortDate(day)}`;
 }
 
-// A short weekday name for the day picker: "א׳" … "ש׳".
+// A short weekday name for the calendar: "א׳" … "ש׳".
 export const WEEKDAY_LETTERS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
-
-// The days from `from`, `count` of them.
-export function daysFrom(from: string, count: number) {
-  return Array.from({ length: count }, (_, i) => addDays(from, i));
-}
 
 // A time written as left to right, so "10:00–11:00" does not flip in a Hebrew line.
 export function ltr(text: string) {
   return `⁦${text}⁩`;
+}
+
+// ---------------------------------------------------------------------------
+// Months, as "YYYY-MM"
+// ---------------------------------------------------------------------------
+
+const MONTH_NAMES = [
+  'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+  'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
+];
+
+export function monthOf(day: string) {
+  return day.slice(0, 7);
+}
+
+export function addMonths(month: string, count: number) {
+  const [year, m] = month.split('-').map(Number);
+  const index = year * 12 + (m - 1) + count;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}`;
+}
+
+// Every day of the month, from the 1st.
+export function daysOfMonth(month: string) {
+  const first = `${month}-01`;
+  const days: string[] = [];
+  for (let day = first; monthOf(day) === month; day = addDays(day, 1)) days.push(day);
+  return days;
+}
+
+// "נובמבר 2026"
+export function monthLabel(month: string) {
+  const [year, m] = month.split('-').map(Number);
+  return `${MONTH_NAMES[m - 1]} ${year}`;
 }

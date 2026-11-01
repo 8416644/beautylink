@@ -4,20 +4,20 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
-import { DayPicker } from '@/components/day-picker';
+import { MonthCalendar } from '@/components/month-calendar';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { bookAppointment, errorText, fetchFreeSlots, type Slot } from '@/lib/appointments';
 import { useAuth } from '@/lib/auth';
-import { dayLabel, daysFrom, ltr, today } from '@/lib/dates';
+import { addDays, dayLabel, daysOfMonth, ltr, monthOf, today } from '@/lib/dates';
 import { fetchPublicPro, type PublicPro } from '@/lib/pros';
 import { fetchActiveServices, formatDuration, formatPrice, type Service } from '@/lib/services';
 import { useAsync } from '@/lib/use-async';
 
-// How far ahead a client can book.
-const DAYS_AHEAD = 21;
+// How far ahead a client can book. The database allows the same.
+const DAYS_AHEAD = 182;
 
 // A client books a treatment with a pro: the treatment, the day, the time, and her phone.
 export default function BookScreen() {
@@ -106,14 +106,17 @@ function Booking({ pro, services, initialServiceId }: BookingProps) {
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState(false);
   const [from] = useState(today);
-  const days = daysFrom(from, DAYS_AHEAD);
+  const [month, setMonth] = useState(() => monthOf(from));
+  const lastMonth = monthOf(addDays(from, DAYS_AHEAD - 1));
+  // The days of this month she can still book: none before today.
+  const days = daysOfMonth(month).filter((d) => d >= from);
 
-  const { state: slotsState, reload: reloadSlots } = useAsync(`${serviceId}:${from}`, () =>
-    fetchFreeSlots(serviceId, from, DAYS_AHEAD),
+  const { state: slotsState, reload: reloadSlots } = useAsync(`${serviceId}:${month}`, () =>
+    fetchFreeSlots(serviceId, days[0], days.length),
   );
   const slots = slotsState.status === 'ready' ? slotsState.data : {};
   const hasSlots = (day: string) => (slots[day]?.length ?? 0) > 0;
-  // Until she picks a day, show the first one with free times.
+  // Until she picks a day, show the first one this month with free times.
   const day = chosenDay && hasSlots(chosenDay) ? chosenDay : (days.find(hasSlots) ?? null);
 
   const selected = services.find((s) => s.id === serviceId)!;
@@ -224,6 +227,22 @@ function Booking({ pro, services, initialServiceId }: BookingProps) {
       )}
 
       <Section title="מתי?">
+        <MonthCalendar
+          month={month}
+          onMonthChange={(m) => {
+            setMonth(m);
+            setChosenDay(null);
+            setSlot(null);
+          }}
+          minMonth={monthOf(from)}
+          maxMonth={lastMonth}
+          selected={day}
+          isAvailable={hasSlots}
+          onSelect={(d) => {
+            setChosenDay(d);
+            setSlot(null);
+          }}
+        />
         {slotsState.status === 'loading' ? (
           <Text muted>מחפשים שעות פנויות…</Text>
         ) : slotsState.status === 'error' ? (
@@ -234,21 +253,13 @@ function Booking({ pro, services, initialServiceId }: BookingProps) {
         ) : !day ? (
           <View style={styles.card}>
             <Text muted>
-              אין שעות פנויות לטיפול הזה בשלושת השבועות הקרובים. אפשר לנסות טיפול אחר, או לחזור
-              לבדוק בהמשך.
+              {month < lastMonth
+                ? 'אין שעות פנויות לטיפול הזה בחודש הזה. אפשר לעבור לחודש הבא בחץ למעלה, או לבחור טיפול אחר.'
+                : 'אין שעות פנויות לטיפול הזה בחודש הזה.'}
             </Text>
           </View>
         ) : (
           <>
-            <DayPicker
-              days={days}
-              selected={day}
-              isAvailable={hasSlots}
-              onSelect={(d) => {
-                setChosenDay(d);
-                setSlot(null);
-              }}
-            />
             <Text variant="smallBold">{dayLabel(day)}</Text>
             <View style={styles.chips}>
               {slots[day].map((s) => (

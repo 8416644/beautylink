@@ -4,7 +4,7 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
-import { DayPicker } from '@/components/day-picker';
+import { MonthCalendar } from '@/components/month-calendar';
 import { Screen } from '@/components/screen';
 import { StatusBadge } from '@/components/status-badge';
 import { Text } from '@/components/text';
@@ -25,7 +25,7 @@ import {
   type TimeOff,
 } from '@/lib/appointments';
 import { useAuth } from '@/lib/auth';
-import { addDays, dayLabel, daysFrom, inIsrael, ltr, today, weekdayOf } from '@/lib/dates';
+import { dayLabel, daysOfMonth, inIsrael, ltr, monthOf, today, weekdayOf } from '@/lib/dates';
 import { fetchWorkingHours, formatShifts, type Shift } from '@/lib/hours';
 import { fetchOwnProProfile } from '@/lib/pro-account';
 import { formatPrice } from '@/lib/services';
@@ -125,11 +125,12 @@ type CalendarProps = {
 
 function Calendar({ proId, approved, settings, hours, onReloadAll }: CalendarProps) {
   const [day, setDay] = useState(today);
-  const [stripStart] = useState(today);
+  const [month, setMonth] = useState(() => monthOf(today()));
 
   const { state: pendingState, reload: reloadPending } = useAsync(proId, () => fetchPendingRequests(proId));
-  const { state: agendaState, reload: reloadAgenda } = useAsync(`${proId}:${day}`, () =>
-    fetchAgenda(proId, day, 1),
+  // The whole month at once, so the calendar can mark the days that have appointments.
+  const { state: agendaState, reload: reloadAgenda } = useAsync(`${proId}:${month}`, () =>
+    fetchAgenda(proId, `${month}-01`, daysOfMonth(month).length),
   );
 
   function reload() {
@@ -142,6 +143,25 @@ function Calendar({ proId, approved, settings, hours, onReloadAll }: CalendarPro
   });
 
   const pending = pendingState.status === 'ready' ? pendingState.data : [];
+  const agenda = agendaState.status === 'ready' ? agendaState.data : null;
+  const onDay = (d: string) => ({
+    appointments: (agenda?.appointments ?? []).filter((a) => inIsrael(a.starts_at).day === d),
+    blocks: (agenda?.blocks ?? []).filter(
+      (b) => inIsrael(b.starts_at).day <= d && d <= inIsrael(new Date(new Date(b.ends_at).getTime() - 1)).day,
+    ),
+  });
+  const dotColor = (d: string) => {
+    const { appointments, blocks } = onDay(d);
+    if (appointments.some((a) => a.status === 'pending' || a.status === 'confirmed')) return Colors.accent;
+    if (appointments.length > 0 || blocks.length > 0) return Colors.textSecondary;
+    return null;
+  };
+  const selectedDay = onDay(day);
+
+  function changeMonth(next: string) {
+    setMonth(next);
+    setDay(monthOf(today()) === next ? today() : `${next}-01`);
+  }
   const shifts = hours.filter((s) => s.weekday === weekdayOf(day));
 
   return (
@@ -175,30 +195,14 @@ function Calendar({ proId, approved, settings, hours, onReloadAll }: CalendarPro
       )}
 
       <View style={styles.section}>
-        <View style={styles.dayNav}>
-          <Pressable
-            onPress={() => setDay(addDays(day, -1))}
-            style={styles.navButton}
-            accessibilityRole="button"
-            accessibilityLabel="היום הקודם">
-            <Text variant="heading" style={styles.link}>
-              ›
-            </Text>
-          </Pressable>
-          <Text variant="heading" style={[styles.grow, styles.center]}>
-            {dayLabel(day)}
-          </Text>
-          <Pressable
-            onPress={() => setDay(addDays(day, 1))}
-            style={styles.navButton}
-            accessibilityRole="button"
-            accessibilityLabel="היום הבא">
-            <Text variant="heading" style={styles.link}>
-              ‹
-            </Text>
-          </Pressable>
-        </View>
-        <DayPicker days={daysFrom(stripStart, 31)} selected={day} onSelect={setDay} />
+        <MonthCalendar
+          month={month}
+          onMonthChange={changeMonth}
+          selected={day}
+          onSelect={setDay}
+          dotColor={dotColor}
+        />
+        <Text variant="heading">{dayLabel(day)}</Text>
         <Text variant="small" muted>
           {shifts.length > 0 ? `שעות עבודה: ${formatShifts(shifts)}` : 'לא יום עבודה לפי השעות שלך'}
         </Text>
@@ -226,8 +230,8 @@ function Calendar({ proId, approved, settings, hours, onReloadAll }: CalendarPro
         ) : (
           <DayItems
             day={day}
-            appointments={agendaState.data.appointments}
-            blocks={agendaState.data.blocks}
+            appointments={selectedDay.appointments}
+            blocks={selectedDay.blocks}
             onChanged={reload}
           />
         )}
@@ -509,20 +513,6 @@ const styles = StyleSheet.create({
   block: {
     backgroundColor: Colors.placeholder,
     borderColor: Colors.placeholder,
-  },
-  dayNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  navButton: {
-    minWidth: 48,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  center: {
-    textAlign: 'center',
   },
   row: {
     flexDirection: 'row',
