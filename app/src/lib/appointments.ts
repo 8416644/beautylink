@@ -23,12 +23,20 @@ const ERROR_TEXT: Record<string, string> = {
   slot_taken: 'השעה הזו כבר נתפסה. אפשר לבחור שעה אחרת.',
   not_found: 'התור לא נמצא. כדאי לרענן.',
   not_active: 'התור הזה כבר לא פעיל.',
-  too_late: 'כבר עבר מועד הביטול של בעלת המקצוע. לביטול צריך לפנות אליה ישירות.',
+  too_late:
+    'כבר עבר מועד הביטול, ולכן התור כרוך בתשלום. לשינוי אפשר לפנות לבעלת המקצוע ישירות.',
   not_a_pro: 'רק בעלת מקצוע יכולה לעשות את זה.',
   name_required: 'צריך לכתוב את שם הלקוחה.',
   bad_range: 'שעת הסיום צריכה להיות אחרי שעת ההתחלה.',
   bad_change: 'אי אפשר לשנות את התור הזה כך.',
 };
+
+// The cancellation policy as clients see it, from the pro's cancellation_hours.
+export function cancellationPolicy(hours: number) {
+  return hours > 0
+    ? `אפשר לבטל עד ${hours} שעות לפני התור. ביטול מאוחר יותר, או אי-הגעה, כרוכים בתשלום על התור.`
+    : 'אפשר לבטל עד תחילת התור. אי-הגעה בלי ביטול כרוכה בתשלום על התור.';
+}
 
 export function errorText(error: unknown) {
   const message = error instanceof Error ? error.message : (error as { message?: string })?.message;

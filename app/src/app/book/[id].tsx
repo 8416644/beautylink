@@ -9,7 +9,13 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import { bookAppointment, errorText, fetchFreeSlots, type Slot } from '@/lib/appointments';
+import {
+  bookAppointment,
+  cancellationPolicy,
+  errorText,
+  fetchFreeSlots,
+  type Slot,
+} from '@/lib/appointments';
 import { useAuth } from '@/lib/auth';
 import { addDays, dayLabel, daysOfMonth, ltr, monthOf, today } from '@/lib/dates';
 import { fetchPublicPro, type PublicPro } from '@/lib/pros';
@@ -168,7 +174,7 @@ function Booking({ pro, services, initialServiceId }: BookingProps) {
         <Text muted>
           {isRequest
             ? 'בעלת המקצוע תאשר את התור בהקדם. אפשר לראות את מצב הבקשה ב"התורים שלי".'
-            : `ביטול אפשרי עד ${pro.cancellation_hours} שעות לפני התור, מ"התורים שלי".`}
+            : `${cancellationPolicy(pro.cancellation_hours)} מבטלים מ"התורים שלי".`}
         </Text>
         <Button label="לתורים שלי" onPress={() => router.replace('/appointments')} />
       </Screen>
@@ -306,7 +312,9 @@ function Booking({ pro, services, initialServiceId }: BookingProps) {
             </Text>
             <Text variant="small" muted>
               {formatPrice(price)} · {formatDuration(selected.duration_min)}
-              {pro.cancellation_hours > 0 ? ` · ביטול עד ${pro.cancellation_hours} שעות לפני` : ''}
+            </Text>
+            <Text variant="small" style={styles.policy}>
+              {cancellationPolicy(pro.cancellation_hours)}
             </Text>
           </View>
         </>
@@ -382,5 +390,8 @@ const styles = StyleSheet.create({
   },
   error: {
     color: Colors.accentPressed,
+  },
+  policy: {
+    color: Colors.accentOnTint,
   },
 });

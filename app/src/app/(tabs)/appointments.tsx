@@ -9,6 +9,7 @@ import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import {
   cancelAppointment,
+  cancellationPolicy,
   errorText,
   fetchMyAppointments,
   type ClientAppointment,
@@ -155,9 +156,11 @@ function AppointmentCard({ appointment: a, onChanged }: { appointment: ClientApp
         {formatPrice(Number(a.price_ils))}
       </Text>
 
-      {upcoming && !a.can_cancel && a.status === 'confirmed' && (
+      {upcoming && a.status === 'confirmed' && (
         <Text variant="caption" muted>
-          עבר מועד הביטול ({a.cancellation_hours} שעות לפני התור). לשינוי צריך לפנות לבעלת המקצוע.
+          {a.can_cancel
+            ? cancellationPolicy(a.cancellation_hours)
+            : 'עבר מועד הביטול, ולכן התור כרוך בתשלום גם אם לא תגיעי. לשינוי אפשר לפנות לבעלת המקצוע.'}
         </Text>
       )}
 

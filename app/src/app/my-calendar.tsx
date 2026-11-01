@@ -11,6 +11,7 @@ import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import {
   cancelAppointment,
+  cancellationPolicy,
   deleteTimeOff,
   errorText,
   fetchAgenda,
@@ -466,6 +467,9 @@ function BookingRules({ proId, initial }: { proId: string; initial: BookingSetti
             />
           ))}
         </View>
+        <Text variant="caption" muted>
+          הלקוחות רואות כשהן קובעות תור: {cancellationPolicy(settings.cancellation_hours)}
+        </Text>
 
         <Text variant="smallBold">כל כמה זמן מתחיל תור פנוי?</Text>
         <View style={styles.chips}>
