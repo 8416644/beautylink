@@ -198,6 +198,13 @@ export function setAppointmentStatus(id: string, status: AppointmentStatus) {
   return rpc<void>('set_appointment_status', { p_id: id, p_status: status });
 }
 
+// Her free times ("HH:MM") on one Israel day for one of her services, for a booking she
+// adds herself.
+export async function fetchMyFreeTimes(serviceId: string, day: string) {
+  const rows = await rpc<{ starts_at: string }[]>('my_free_slots', { p_service: serviceId, p_date: day });
+  return rows.map((row) => inIsrael(row.starts_at)).filter((t) => t.day === day).map((t) => t.time);
+}
+
 export function addManualAppointment(input: {
   serviceId: string;
   day: string;

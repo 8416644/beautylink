@@ -3,14 +3,15 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { Chip } from '@/components/chip';
 import { MonthCalendar } from '@/components/month-calendar';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import { addManualAppointment, errorText } from '@/lib/appointments';
+import { addManualAppointment, errorText, fetchMyFreeTimes } from '@/lib/appointments';
 import { useAuth } from '@/lib/auth';
-import { dayLabel, monthOf, today } from '@/lib/dates';
+import { dayLabel, ltr, monthOf, today } from '@/lib/dates';
 import { parseTime } from '@/lib/hours';
 import { fetchOwnServices, formatDuration, formatPrice, type Service } from '@/lib/services';
 import { useAsync } from '@/lib/use-async';
@@ -56,7 +57,10 @@ export default function AddAppointmentScreen() {
 function Form({ services, initialDay }: { services: Service[]; initialDay: string }) {
   const [serviceId, setServiceId] = useState(services.find((s) => s.is_active)?.id ?? services[0].id);
   const [day, setDay] = useState(initialDay);
-  const [time, setTime] = useState('');
+  // A free time she picked from the list, or a time she typed herself.
+  const [picked, setPicked] = useState<string | null>(null);
+  const [otherTime, setOtherTime] = useState(false);
+  const [typed, setTyped] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [note, setNote] = useState('');
@@ -64,7 +68,13 @@ function Form({ services, initialDay }: { services: Service[]; initialDay: strin
   const [error, setError] = useState<string | null>(null);
   const [month, setMonth] = useState(() => monthOf(initialDay));
 
-  const parsed = parseTime(time);
+  const { state: timesState, reload: reloadTimes } = useAsync(`${serviceId}:${day}`, () =>
+    fetchMyFreeTimes(serviceId, day),
+  );
+  const freeTimes = timesState.status === 'ready' ? timesState.data : [];
+  // A picked time counts only while it is still in the list for this service and day.
+  const pickedTime = picked && freeTimes.includes(picked) ? picked : null;
+  const parsed = otherTime ? parseTime(typed) : pickedTime;
   const ready = parsed !== null && name.trim() !== '';
 
   async function save() {
@@ -77,6 +87,7 @@ function Form({ services, initialDay }: { services: Service[]; initialDay: strin
     } catch (e) {
       setError(errorText(e));
       setBusy(false);
+      reloadTimes();
     }
   }
 
@@ -120,15 +131,54 @@ function Form({ services, initialDay }: { services: Service[]; initialDay: strin
           onSelect={setDay}
         />
         <Text variant="smallBold">{dayLabel(day)}</Text>
-        <TextField
-          label="שעה"
-          ltr
-          value={time}
-          onChangeText={setTime}
-          onBlur={() => parsed && setTime(parsed)}
-          keyboardType="numbers-and-punctuation"
-          placeholder="10:30"
-        />
+        <View style={styles.card}>
+          <Text variant="smallBold">שעות פנויות</Text>
+          {timesState.status === 'loading' ? (
+            <Text variant="small" muted>
+              טוענים…
+            </Text>
+          ) : timesState.status === 'error' ? (
+            <>
+              <Text variant="small" muted>
+                לא הצלחנו לטעון את השעות הפנויות.
+              </Text>
+              <Button label="לנסות שוב" variant="secondary" onPress={reloadTimes} />
+            </>
+          ) : freeTimes.length === 0 ? (
+            <Text variant="small" muted>
+              אין שעות פנויות לטיפול הזה ביום הזה לפי שעות העבודה שלך. אפשר לבחור &quot;שעה אחרת&quot;.
+            </Text>
+          ) : null}
+          <View style={styles.chips}>
+            {freeTimes.map((t) => (
+              <Chip
+                key={t}
+                label={ltr(t)}
+                selected={!otherTime && pickedTime === t}
+                onPress={() => {
+                  setPicked(t);
+                  setOtherTime(false);
+                }}
+              />
+            ))}
+            <Chip label="שעה אחרת" selected={otherTime} onPress={() => setOtherTime(true)} />
+          </View>
+          {otherTime && (
+            <TextField
+              label="שעה"
+              hint="גם מחוץ לשעות העבודה, כל עוד אין תור אחר באותו זמן."
+              ltr
+              value={typed}
+              onChangeText={setTyped}
+              onBlur={() => {
+                const t = parseTime(typed);
+                if (t) setTyped(t);
+              }}
+              keyboardType="numbers-and-punctuation"
+              placeholder="10:30"
+            />
+          )}
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -166,6 +216,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
   },
   option: {
     flexDirection: 'row',
