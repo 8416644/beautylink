@@ -302,6 +302,11 @@ function PhotoTile({ item, onChanged }: { item: PortfolioItem; onChanged: () => 
         </View>
       ) : (
         <>
+          {item.is_hidden ? (
+            <Text variant="caption" style={styles.hiddenNote}>
+              הוסתרה על ידי צוות BeautyLink ולא מופיעה ללקוחות. אפשר למחוק אותה.
+            </Text>
+          ) : null}
           {item.caption ? <Text variant="small">{item.caption}</Text> : null}
           <View style={styles.chips}>
             <Chip label={item.caption ? 'עריכת תיאור' : 'הוספת תיאור'} selected={false} onPress={() => setMode('caption')} />
@@ -323,6 +328,9 @@ function Card({ children }: { children: React.ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  hiddenNote: {
+    color: Colors.accentPressed,
+  },
   card: {
     gap: Spacing.two,
     padding: Spacing.four,

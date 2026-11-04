@@ -12,6 +12,8 @@ export type PortfolioItem = {
   media_url: string;
   caption: string | null;
   sort: number;
+  // Hidden by an admin: clients no longer see it; the pro sees it marked.
+  is_hidden: boolean;
 };
 
 const BUCKET = 'portfolio';
@@ -19,7 +21,7 @@ const BUCKET = 'portfolio';
 export async function fetchPortfolio(proId: string): Promise<PortfolioItem[]> {
   const { data, error } = await supabase
     .from('portfolio_items')
-    .select('id, media_url, caption, sort')
+    .select('id, media_url, caption, sort, is_hidden')
     .eq('pro_id', proId)
     .eq('media_kind', 'image')
     .order('sort', { ascending: false })
@@ -46,6 +48,35 @@ export async function updateCaption(id: string, caption: string) {
     .from('portfolio_items')
     .update({ caption: caption.trim() || null })
     .eq('id', id);
+  if (error) throw error;
+}
+
+// The photos clients may see. The database already holds hidden ones back from clients;
+// an admin or the pro herself still gets them, so pages for clients drop them here too.
+export function visiblePhotos<T extends { is_hidden: boolean }>(items: T[]): T[] {
+  return items.filter((item) => !item.is_hidden);
+}
+
+export type AdminPhoto = PortfolioItem & {
+  pro_id: string;
+  created_at: string;
+  pro_profiles: { display_name: string } | null;
+};
+
+// The newest photos of every pro, hidden ones included, for the admin to review.
+export async function fetchAllPhotos(): Promise<AdminPhoto[]> {
+  const { data, error } = await supabase
+    .from('portfolio_items')
+    .select('id, media_url, caption, sort, is_hidden, pro_id, created_at, pro_profiles(display_name)')
+    .eq('media_kind', 'image')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return data as unknown as AdminPhoto[];
+}
+
+export async function setPhotoHidden(id: string, isHidden: boolean) {
+  const { error } = await supabase.from('portfolio_items').update({ is_hidden: isHidden }).eq('id', id);
   if (error) throw error;
 }
 

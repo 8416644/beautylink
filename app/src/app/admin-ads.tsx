@@ -25,7 +25,7 @@ import { useAuth } from '@/lib/auth';
 import { fetchCategories, type Category } from '@/lib/categories';
 import { today } from '@/lib/dates';
 import { fetchFeaturedProId, setFeaturedPro } from '@/lib/featured';
-import { fetchPortfolio } from '@/lib/portfolio';
+import { fetchPortfolio, visiblePhotos } from '@/lib/portfolio';
 import { photoProblem, pickerOptions } from '@/lib/upload';
 import { useAsync } from '@/lib/use-async';
 
@@ -515,7 +515,7 @@ function PortfolioPicker({ visible, pros, initialProId, onPick, onClose }: Portf
 
 function PortfolioPickerWindow({ pros, initialProId, onPick, onClose }: Omit<PortfolioPickerProps, 'visible'>) {
   const [proId, setProId] = useState<string | null>(initialProId ?? pros[0]?.user_id ?? null);
-  const { state, reload } = useAsync(proId, () => fetchPortfolio(proId!));
+  const { state, reload } = useAsync(proId, () => fetchPortfolio(proId!).then(visiblePhotos));
 
   return (
     <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="סגירה">

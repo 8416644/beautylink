@@ -32,6 +32,7 @@ export async function fetchFeedPage(
     .from('portfolio_items')
     .select('id, media_url, caption, created_at, pro_id')
     .eq('media_kind', 'image')
+    .eq('is_hidden', false)
     .order('created_at', { ascending: false })
     .limit(FEED_PAGE);
   if (categoryId !== null) {

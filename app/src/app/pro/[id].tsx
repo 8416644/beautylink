@@ -15,7 +15,7 @@ import { fetchProPromotions, formatDay as formatAdDay, type Ad } from '@/lib/ads
 import { fetchProReviews, type Review } from '@/lib/reviews';
 import { fetchWorkingHours, formatShifts, WEEKDAYS, type Shift } from '@/lib/hours';
 import { isWebLink } from '@/lib/links';
-import { fetchPortfolio, type PortfolioItem } from '@/lib/portfolio';
+import { fetchPortfolio, visiblePhotos, type PortfolioItem } from '@/lib/portfolio';
 import { fetchPublicPro, type PublicPro } from '@/lib/pros';
 import { fetchActiveServices, formatDuration, formatPrice, type Service } from '@/lib/services';
 import { useAsync } from '@/lib/use-async';
@@ -27,7 +27,7 @@ export default function ProPageScreen() {
     const [pro, priceList, photos, hours, promotions, reviews] = await Promise.all([
       fetchPublicPro(id!),
       fetchActiveServices(id!),
-      fetchPortfolio(id!),
+      fetchPortfolio(id!).then(visiblePhotos),
       fetchWorkingHours(id!),
       // A page still shows if the promotions cannot load.
       fetchProPromotions(id!).catch(() => [] as Ad[]),
@@ -94,7 +94,7 @@ function ProPage({ pro, priceList, photos, hours, promotions, reviews }: ProPage
   const [tab, setTab] = useState<TabKey>(photos.length > 0 ? 'works' : 'prices');
   // Her profile photo across the top; until she adds one, her newest portfolio photo.
   const cover: PortfolioItem | null = pro.cover_url
-    ? { id: 'cover', media_url: pro.cover_url, caption: pro.display_name, sort: 0 }
+    ? { id: 'cover', media_url: pro.cover_url, caption: pro.display_name, sort: 0, is_hidden: false }
     : (photos[0] ?? null);
   const place =[pro.neighborhood, pro.city].filter(Boolean).join(', ');
   const where = [

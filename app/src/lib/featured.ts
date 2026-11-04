@@ -32,6 +32,7 @@ export async function fetchFeaturedPro(): Promise<FeaturedPro | null> {
       .select('media_url')
       .eq('pro_id', proId)
       .eq('media_kind', 'image')
+      .eq('is_hidden', false)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
