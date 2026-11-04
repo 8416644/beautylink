@@ -22,6 +22,7 @@ export const Colors = {
   ink: '#1A1416',
   inkPressed: '#3A2E33',
   onInk: '#FFF6F7',
+  onInkMuted: '#A3969B',
   // Rose that reads on ink, for highlights on dark surfaces.
   inkAccent: '#E7A8BD',
 } as const;
@@ -46,9 +47,14 @@ export const Spacing = {
 } as const;
 
 export const Radius = {
-  small: 12,
-  medium: 16,
+  small: 14,
+  medium: 20,
   pill: 999,
 } as const;
 
 export const MaxContentWidth = 720;
+
+// The floating tab bar, and the room every screen leaves under its content so the bar
+// never covers the last item.
+export const TAB_BAR_HEIGHT = 64;
+export const TAB_BAR_SPACE = TAB_BAR_HEIGHT + 48;

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, MaxContentWidth, Spacing, TAB_BAR_SPACE } from '@/constants/theme';
 
 // Keeps the field being typed in above the phone's keyboard: iOS scrolls it into view
 // itself, and on Android the screen shrinks to the space above the keyboard.
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Spacing.five,
     paddingTop: Spacing.four,
-    paddingBottom: Spacing.eight,
+    paddingBottom: TAB_BAR_SPACE,
     gap: Spacing.six,
   },
 });

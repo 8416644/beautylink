@@ -17,13 +17,17 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <Image
-        source={require('@/assets/images/logo.png')}
-        style={styles.logo}
-        contentFit="contain"
-        accessibilityLabel="BeautyLink"
-      />
-      <Text variant="title">מה מתחשק לך היום?</Text>
+      <View style={styles.logoCircle}>
+        <Image
+          source={require('@/assets/images/logo.png')}
+          style={styles.logo}
+          contentFit="contain"
+          accessibilityLabel="BeautyLink"
+        />
+      </View>
+      <Text variant="title" style={styles.greeting}>
+        מה מתחשק לך היום?
+      </Text>
 
       <Link href="/search" asChild>
         <Pressable style={styles.search} accessibilityRole="search" accessibilityLabel="חיפוש">
@@ -80,12 +84,26 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  // The logo file is 300 by 211.
-  logo: {
-    width: 150,
-    height: 106,
+  // A circle in the logo's own background pink, so the rectangular file blends into it.
+  logoCircle: {
+    width: 148,
+    height: 148,
+    borderRadius: 74,
     alignSelf: 'center',
-    borderRadius: Radius.medium,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFE6FE',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  // The logo file is trimmed to its drawing (206 by 179). This is the largest size whose
+  // corners still fit inside the circle.
+  logo: {
+    width: 110,
+    height: 96,
+  },
+  greeting: {
+    textAlign: 'center',
   },
   search: {
     flexDirection: 'row',
