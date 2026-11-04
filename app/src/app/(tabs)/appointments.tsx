@@ -17,6 +17,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { dayLabel, inIsrael, ltr } from '@/lib/dates';
 import { fetchOwnProProfile } from '@/lib/pro-account';
+import { fetchMyReviewedAppointmentIds } from '@/lib/reviews';
 import { formatPrice } from '@/lib/services';
 import { useAsync } from '@/lib/use-async';
 import { useReloadOnFocus } from '@/lib/use-reload-on-focus';
@@ -26,8 +27,12 @@ export default function AppointmentsScreen() {
   const { loading, session } = useAuth();
   const userId = session?.user.id ?? null;
   const { state, reload } = useAsync(userId, async () => {
-    const [appointments, pro] = await Promise.all([fetchMyAppointments(), fetchOwnProProfile(userId!)]);
-    return { appointments, isPro: pro !== null && pro.status !== 'suspended' };
+    const [appointments, pro, reviewed] = await Promise.all([
+      fetchMyAppointments(),
+      fetchOwnProProfile(userId!),
+      fetchMyReviewedAppointmentIds(userId!),
+    ]);
+    return { appointments, isPro: pro !== null && pro.status !== 'suspended', reviewed };
   });
   useReloadOnFocus(reload);
 
@@ -66,7 +71,7 @@ export default function AppointmentsScreen() {
     );
   }
 
-  const { appointments, isPro } = state.data;
+  const { appointments, isPro, reviewed } = state.data;
   const now = new Date().toISOString();
   const live = (a: ClientAppointment) => a.status === 'pending' || a.status === 'confirmed';
   const upcoming = appointments.filter((a) => live(a) && a.ends_at > now).reverse();
@@ -102,7 +107,7 @@ export default function AppointmentsScreen() {
         <View style={styles.section}>
           <Text variant="heading">קודמים</Text>
           {past.map((a) => (
-            <AppointmentCard key={a.id} appointment={a} onChanged={reload} />
+            <AppointmentCard key={a.id} appointment={a} onChanged={reload} reviewed={reviewed.has(a.id)} />
           ))}
         </View>
       )}
@@ -110,7 +115,15 @@ export default function AppointmentsScreen() {
   );
 }
 
-function AppointmentCard({ appointment: a, onChanged }: { appointment: ClientAppointment; onChanged: () => void }) {
+function AppointmentCard({
+  appointment: a,
+  onChanged,
+  reviewed = false,
+}: {
+  appointment: ClientAppointment;
+  onChanged: () => void;
+  reviewed?: boolean;
+}) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,6 +192,24 @@ function AppointmentCard({ appointment: a, onChanged }: { appointment: ClientApp
           </View>
         ) : (
           <Button label="ביטול" variant="secondary" onPress={() => setConfirming(true)} />
+        ))}
+
+      {/* A completed appointment can be reviewed once. */}
+      {a.status === 'completed' &&
+        (reviewed ? (
+          <Text variant="caption" muted>
+            ★ כתבת ביקורת על התור הזה. תודה!
+          </Text>
+        ) : (
+          <Button
+            label="כתיבת ביקורת"
+            onPress={() =>
+              router.push({
+                pathname: '/review/[id]',
+                params: { id: a.id, pro: a.pro_id, proName: a.pro_name, service: a.service_name },
+              })
+            }
+          />
         ))}
 
       {error ? (
