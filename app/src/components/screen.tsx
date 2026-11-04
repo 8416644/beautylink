@@ -12,20 +12,24 @@ import {
 
 type ScreenProps = {
   children: ReactNode;
-  // Pinned just above the floating tab bar, outside the scrolling content (the home
-  // screen's ads strip). The content leaves footerHeight of extra room for it.
+  // Pinned at the bottom, outside the scrolling content (the home screen's ads strip, a
+  // pro page's booking button). The content leaves footerHeight of extra room for it.
   footer?: ReactNode;
   footerHeight?: number;
+  // Whether the screen is one of the tabs, so the footer sits above the floating tab bar;
+  // other screens pin it near the bottom edge.
+  inTabs?: boolean;
 };
 
 // Keeps the field being typed in above the phone's keyboard: iOS scrolls it into view
 // itself, and on Android the screen shrinks to the space above the keyboard.
-export function Screen({ children, footer, footerHeight = 0 }: ScreenProps) {
+export function Screen({ children, footer, footerHeight = 0, inTabs = true }: ScreenProps) {
   const insets = useSafeAreaInsets();
   // Room under the content, so the last item can scroll clear of everything pinned at the
   // bottom: the phone's own bottom bar, the floating tab bar and the footer.
   const bottomRoom =
     insets.bottom + TAB_BAR_SPACE + (footer ? footerHeight + Spacing.two : 0);
+  const footerBottom = insets.bottom + Spacing.two + (inTabs ? TAB_BAR_HEIGHT + Spacing.two : 0);
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
       <KeyboardAvoidingView
@@ -38,10 +42,7 @@ export function Screen({ children, footer, footerHeight = 0 }: ScreenProps) {
           {children}
         </ScrollView>
         {footer ? (
-          <View
-            style={[styles.footer, { bottom: insets.bottom + Spacing.two + TAB_BAR_HEIGHT + Spacing.two }]}>
-            {footer}
-          </View>
+          <View style={[styles.footer, { bottom: footerBottom }]}>{footer}</View>
         ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>

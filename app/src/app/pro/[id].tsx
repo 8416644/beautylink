@@ -98,7 +98,10 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
   ].filter((l): l is { label: string; url: string } => isWebLink(l.url));
 
   return (
-    <Screen>
+    <Screen
+      inTabs={false}
+      footer={canBook ? <BookButton proId={pro.user_id} from={Math.min(...priceList.map((s) => s.price_ils))} /> : undefined}
+      footerHeight={BOOK_BUTTON_HEIGHT}>
       {/* Her newest portfolio photo across the top, with her details on a card over its
           lower edge. Without photos, the card stands alone. */}
       <View>
@@ -162,10 +165,6 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
           ) : null}
         </View>
       ))}
-
-      {canBook && (
-        <Button label="קביעת תור" onPress={() => router.push(`/book/${pro.user_id}`)} />
-      )}
 
       <View style={styles.tabs} accessibilityRole="tablist">
         {TABS.map((t) => (
@@ -309,6 +308,26 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
   );
 }
 
+const BOOK_BUTTON_HEIGHT = 56;
+
+// Pinned at the bottom of her page, so booking is one tap away wherever she scrolls.
+function BookButton({ proId, from }: { proId: string; from: number }) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.bookButton, pressed && styles.bookButtonPressed]}
+      onPress={() => router.push({ pathname: '/book/[id]', params: { id: proId } })}
+      accessibilityRole="button"
+      accessibilityLabel={`קביעת תור, מחירים מ-${formatPrice(from)}`}>
+      <Text variant="smallBold" style={styles.bookText}>
+        קביעת תור
+      </Text>
+      <Text variant="small" style={styles.bookFrom}>
+        מ-{formatPrice(from)}
+      </Text>
+    </Pressable>
+  );
+}
+
 function Empty({ text }: { text: string }) {
   return (
     <View style={styles.card}>
@@ -347,6 +366,24 @@ function Tag({ label }: { label: string }) {
 }
 
 const styles = StyleSheet.create({
+  bookButton: {
+    height: BOOK_BUTTON_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.five,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.ink,
+  },
+  bookButtonPressed: {
+    backgroundColor: Colors.inkPressed,
+  },
+  bookText: {
+    color: Colors.onInk,
+  },
+  bookFrom: {
+    color: Colors.inkAccent,
+  },
   tabs: {
     flexDirection: 'row',
     padding: Spacing.one,
