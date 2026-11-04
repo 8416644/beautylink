@@ -6,7 +6,7 @@ export type FeaturedPro = {
   display_name: string;
   city: string;
   neighborhood: string | null;
-  // Her newest portfolio photo, or null when she has none.
+  // Her profile photo, else her newest portfolio photo; null when she has neither.
   photo_url: string | null;
 };
 
@@ -22,7 +22,11 @@ export async function fetchFeaturedPro(): Promise<FeaturedPro | null> {
   const proId = await fetchFeaturedProId();
   if (!proId) return null;
   const [pro, photo] = await Promise.all([
-    supabase.from('public_pros').select('user_id, display_name, city, neighborhood').eq('user_id', proId).maybeSingle(),
+    supabase
+      .from('public_pros')
+      .select('user_id, display_name, city, neighborhood, cover_url')
+      .eq('user_id', proId)
+      .maybeSingle(),
     supabase
       .from('portfolio_items')
       .select('media_url')
@@ -34,7 +38,9 @@ export async function fetchFeaturedPro(): Promise<FeaturedPro | null> {
   ]);
   if (pro.error) throw pro.error;
   if (!pro.data) return null;
-  return { ...pro.data, photo_url: photo.data?.media_url ?? null };
+  const { cover_url, ...rest } = pro.data;
+  // Her profile photo, or her newest portfolio photo until she adds one.
+  return { ...rest, photo_url: cover_url ?? photo.data?.media_url ?? null };
 }
 
 export async function setFeaturedPro(proId: string | null) {

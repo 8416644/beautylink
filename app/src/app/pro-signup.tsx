@@ -1,6 +1,8 @@
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
@@ -13,11 +15,13 @@ import { fetchCategories, type Category } from '@/lib/categories';
 import {
   fetchOwnProProfile,
   fetchSubcategories,
+  saveProCover,
   saveProProfile,
   type OwnProProfile,
   type Subcategory,
 } from '@/lib/pro-account';
 import { normalizeLink } from '@/lib/links';
+import { photoProblem, pickerOptions } from '@/lib/upload';
 import { useAsync } from '@/lib/use-async';
 
 export default function ProSignupScreen() {
@@ -102,6 +106,34 @@ function ProForm({ userId, existing, categories, subcategories }: ProFormProps) 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // A new or removed profile photo, saved with the rest of the form.
+  const [coverChange, setCoverChange] = useState<
+    { kind: 'upload'; asset: ImagePicker.ImagePickerAsset } | { kind: 'none' } | null
+  >(null);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const coverUri =
+    coverChange?.kind === 'upload'
+      ? coverChange.asset.uri
+      : coverChange?.kind === 'none'
+        ? null
+        : (existing?.cover_url ?? null);
+
+  async function pickCover(source: 'library' | 'camera') {
+    setCoverError(null);
+    if (source === 'camera' && Platform.OS !== 'web') {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) return setCoverError('כדי לצלם צריך לאשר גישה למצלמה בהגדרות הטלפון.');
+    }
+    const result =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync(pickerOptions)
+        : await ImagePicker.launchImageLibraryAsync(pickerOptions);
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    const problem = photoProblem(asset);
+    if (problem) return setCoverError(problem);
+    setCoverChange({ kind: 'upload', asset });
+  }
 
   if (status === 'suspended') {
     return (
@@ -172,6 +204,8 @@ function ProForm({ userId, existing, categories, subcategories }: ProFormProps) 
         selected,
         status,
       );
+      // After the profile, so a new pro's row exists before her photo goes to her folder.
+      if (coverChange) await saveProCover(userId, coverChange, existing?.cover_url ?? null);
       if (status !== 'approved' && status !== 'pending') setStatus('pending');
       setSaved(true);
     } catch {
@@ -202,6 +236,31 @@ function ProForm({ userId, existing, categories, subcategories }: ProFormProps) 
           } אפשר לתקן את הפרטים ולשלוח שוב.`}
         />
       )}
+
+      <Section title="תמונת פרופיל">
+        <Text variant="small" muted>
+          מופיעה בגדול בראש הדף שלך. אפשר לוגו של העסק, הסלון או עבודה שלך. תמונה צנועה בלבד.
+        </Text>
+        <View style={styles.coverRow}>
+          {coverUri ? (
+            <Image source={{ uri: coverUri }} style={styles.cover} contentFit="cover" />
+          ) : (
+            <View style={[styles.cover, styles.coverEmpty]} />
+          )}
+          <View style={styles.coverActions}>
+            <Button label="מהגלריה" variant="secondary" onPress={() => pickCover('library')} />
+            <Button label="צילום" variant="secondary" onPress={() => pickCover('camera')} />
+            {coverUri ? (
+              <Button label="הסרה" variant="secondary" onPress={() => setCoverChange({ kind: 'none' })} />
+            ) : null}
+          </View>
+        </View>
+        {coverError ? (
+          <Text variant="small" style={styles.error} accessibilityRole="alert">
+            {coverError}
+          </Text>
+        ) : null}
+      </Section>
 
       <Section title="פרטי העסק">
         <TextField label="שם העסק או השם המקצועי" value={displayName} onChangeText={setDisplayName} />
@@ -336,6 +395,23 @@ function Notice({ tone, text }: { tone: 'rose' | 'lavender'; text: string }) {
 }
 
 const styles = StyleSheet.create({
+  coverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  cover: {
+    width: 120,
+    height: 120,
+    borderRadius: Radius.medium,
+  },
+  coverEmpty: {
+    backgroundColor: Colors.placeholder,
+  },
+  coverActions: {
+    flex: 1,
+    gap: Spacing.two,
+  },
   section: {
     gap: Spacing.three,
   },

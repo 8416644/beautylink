@@ -1,4 +1,7 @@
+import type { ImagePickerAsset } from 'expo-image-picker';
+
 import { supabase } from './supabase';
+import { removePicture, uploadPicture } from './upload';
 
 export type ProStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'suspended';
 
@@ -22,6 +25,8 @@ export type ProDetails = {
 export type OwnProProfile = ProDetails & {
   status: ProStatus;
   rejection_reason: string | null;
+  // Her profile photo, shown across the top of her page.
+  cover_url: string | null;
   subcategory_ids: number[];
 };
 
@@ -43,7 +48,7 @@ export async function fetchOwnProProfile(userId: string): Promise<OwnProProfile 
     .select(
       'display_name, bio, years_experience, city, neighborhood, works_at_salon, works_at_home, ' +
         'travels_to_client, travel_radius_km, instagram_url, tiktok_url, facebook_url, status, ' +
-        'rejection_reason, pro_subcategories(subcategory_id)',
+        'rejection_reason, cover_url, pro_subcategories(subcategory_id)',
     )
     .eq('user_id', userId)
     .maybeSingle();
@@ -86,4 +91,20 @@ export async function saveProProfile(
     .from('pro_subcategories')
     .insert(subcategoryIds.map((id) => ({ pro_id: userId, subcategory_id: id })));
   if (insertError) throw insertError;
+}
+
+// Sets or removes her profile photo. A new photo goes to her folder in the portfolio
+// bucket; the old one is removed once the profile no longer points to it.
+export async function saveProCover(
+  userId: string,
+  change: { kind: 'upload'; asset: ImagePickerAsset } | { kind: 'none' },
+  oldUrl: string | null,
+) {
+  const url = change.kind === 'upload' ? (await uploadPicture('portfolio', userId, change.asset)).publicUrl : null;
+  const { error } = await supabase.from('pro_profiles').update({ cover_url: url }).eq('user_id', userId);
+  if (error) {
+    if (url) await removePicture('portfolio', url);
+    throw error;
+  }
+  if (oldUrl && oldUrl !== url) await removePicture('portfolio', oldUrl);
 }

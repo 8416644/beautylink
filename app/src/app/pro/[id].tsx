@@ -76,7 +76,11 @@ type ProPageProps = {
 
 function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
   const [viewing, setViewing] = useState<PortfolioItem | null>(null);
-  const place = [pro.neighborhood, pro.city].filter(Boolean).join(', ');
+  // Her profile photo across the top; until she adds one, her newest portfolio photo.
+  const cover: PortfolioItem | null = pro.cover_url
+    ? { id: 'cover', media_url: pro.cover_url, caption: pro.display_name, sort: 0 }
+    : (photos[0] ?? null);
+  const place =[pro.neighborhood, pro.city].filter(Boolean).join(', ');
   const where = [
     pro.works_at_salon && 'בסלון',
     pro.works_at_home && 'בבית שלה',
@@ -93,30 +97,50 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Text variant="title" style={styles.name}>
-          {pro.display_name}
-        </Text>
-        {pro.rating_count > 0 ? (
-          <View style={styles.rating}>
-            <Icon name={{ ios: 'star.fill', android: 'star', web: 'star' }} size={18} color={Colors.star} />
-            <Text variant="smallBold">{Number(pro.rating_avg).toFixed(1)}</Text>
-            <Text variant="small" muted>
-              ({pro.rating_count} ביקורות)
+      {/* Her newest portfolio photo across the top, with her details on a card over its
+          lower edge. Without photos, the card stands alone. */}
+      <View>
+        {cover ? (
+          <Pressable
+            onPress={() => setViewing(cover)}
+            accessibilityRole="button"
+            accessibilityLabel={cover.caption ?? 'עבודה מתיק העבודות'}>
+            <Image source={{ uri: cover.media_url }} style={styles.cover} contentFit="cover" />
+          </Pressable>
+        ) : null}
+        <View style={[styles.headerCard, cover && styles.headerCardOverCover]}>
+          <View style={styles.header}>
+            <Text variant="title" style={styles.name}>
+              {pro.display_name}
             </Text>
+            {pro.rating_count > 0 ? (
+              <View style={styles.ratingBadge}>
+                <Icon name={{ ios: 'star.fill', android: 'star', web: 'star' }} size={14} color={Colors.inkAccent} />
+                <Text variant="caption" style={styles.ratingText}>
+                  {Number(pro.rating_avg).toFixed(1)} ({pro.rating_count})
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.newBadge}>
+                <Text variant="caption" style={styles.newBadgeText}>
+                  חדשה
+                </Text>
+              </View>
+            )}
           </View>
-        ) : (
-          <View style={styles.newBadge}>
-            <Text variant="caption" style={styles.newBadgeText}>
-              חדשה
-            </Text>
-          </View>
-        )}
+          <Text variant="small" muted>
+            {place}
+            {pro.years_experience !== null ? ` · ${pro.years_experience} שנות ניסיון` : ''}
+          </Text>
+          {where.length > 0 && (
+            <View style={styles.tags}>
+              {where.map((label) => (
+                <Tag key={label} label={label} />
+              ))}
+            </View>
+          )}
+        </View>
       </View>
-      <Text muted>
-        {place}
-        {pro.years_experience !== null ? ` · ${pro.years_experience} שנות ניסיון` : ''}
-      </Text>
 
       {promotions.map((promo) => (
         <View key={promo.id} style={styles.promo}>
@@ -147,18 +171,11 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
         </View>
       ) : null}
 
-      <Section title="איפה היא עובדת">
-        <View style={styles.tags}>
-          {where.map((label) => (
-            <Tag key={label} label={label} />
-          ))}
-        </View>
-        {pro.travels_to_client && travelFee > 0 ? (
-          <Text variant="small" muted>
-            תוספת הגעה: {travelFee} ₪
-          </Text>
-        ) : null}
-      </Section>
+      {pro.travels_to_client && travelFee > 0 ? (
+        <Text variant="small" muted>
+          תוספת הגעה אלייך: {travelFee} ₪
+        </Text>
+      ) : null}
 
       {photos.length > 0 && (
         <Section title="תיק עבודות">
@@ -325,10 +342,36 @@ const styles = StyleSheet.create({
   name: {
     flexShrink: 1,
   },
-  rating: {
+  cover: {
+    width: '100%',
+    height: 220,
+    borderRadius: Radius.medium,
+    backgroundColor: Colors.placeholder,
+  },
+  headerCard: {
+    gap: Spacing.two,
+    padding: Spacing.four,
+    borderRadius: Radius.medium,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  // Rides up over the bottom of the cover photo, inset from its sides.
+  headerCardOverCover: {
+    marginTop: -36,
+    marginHorizontal: Spacing.three,
+  },
+  ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.ink,
+  },
+  ratingText: {
+    color: Colors.onInk,
   },
   newBadge: {
     paddingHorizontal: Spacing.two,

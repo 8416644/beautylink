@@ -47,6 +47,8 @@ export type PublicPro = ProSummary & {
   instagram_url: string | null;
   tiktok_url: string | null;
   facebook_url: string | null;
+  // Her profile photo, shown across the top of her page.
+  cover_url: string | null;
   booking_mode: 'instant' | 'request';
   cancellation_hours: number;
   // Her subcategories, grouped under their category, in the app's order.
@@ -65,7 +67,7 @@ export async function fetchPublicPro(id: string): Promise<PublicPro | null> {
       .select(
         'user_id, display_name, bio, years_experience, city, neighborhood, works_at_salon, ' +
           'works_at_home, travels_to_client, travel_radius_km, travel_fee_ils, instagram_url, ' +
-          'tiktok_url, facebook_url, rating_avg, rating_count, booking_mode, cancellation_hours',
+          'tiktok_url, facebook_url, cover_url, rating_avg, rating_count, booking_mode, cancellation_hours',
       )
       .eq('user_id', id)
       .maybeSingle(),

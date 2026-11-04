@@ -5,6 +5,7 @@ export type ProForReview = ProDetails & {
   user_id: string;
   status: ProStatus;
   rejection_reason: string | null;
+  cover_url: string | null;
   created_at: string;
   profiles: { full_name: string; phone: string | null } | null;
   pro_subcategories: { subcategories: { name: string } | null }[];
@@ -20,7 +21,7 @@ export async function fetchProsByStatus(status: ProStatus): Promise<ProForReview
       'user_id, display_name, bio, years_experience, city, neighborhood, works_at_salon, ' +
         'works_at_home, travels_to_client, travel_radius_km, instagram_url, tiktok_url, ' +
         'facebook_url, status, ' +
-        'rejection_reason, created_at, profiles!pro_profiles_user_id_fkey(full_name, phone), ' +
+        'rejection_reason, cover_url, created_at, profiles!pro_profiles_user_id_fkey(full_name, phone), ' +
         'pro_subcategories(subcategories(name))',
     )
     .eq('status', status)

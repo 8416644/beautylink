@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -111,6 +112,10 @@ function ReviewCard({ pro, adminId, onChanged }: ReviewCardProps) {
 
   return (
     <View style={styles.card}>
+      {/* Her profile photo, to check before approving that it suits the app (modest). */}
+      {pro.cover_url ? (
+        <Image source={{ uri: pro.cover_url }} style={styles.cover} contentFit="cover" />
+      ) : null}
       <Text variant="heading">{pro.display_name}</Text>
       <Text variant="small" muted>
         {[pro.profiles?.full_name, pro.profiles?.phone].filter(Boolean).join(' · ')}
@@ -176,6 +181,12 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  cover: {
+    width: '100%',
+    height: 160,
+    borderRadius: Radius.small,
+    backgroundColor: Colors.placeholder,
+  },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
