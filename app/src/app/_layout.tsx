@@ -8,6 +8,7 @@ import { Platform } from 'react-native';
 
 import { Colors, Fonts } from '@/constants/theme';
 import { AuthProvider } from '@/lib/auth';
+import { VisitTracker } from '@/lib/visits';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,6 +40,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
+      <VisitTracker />
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -66,6 +68,7 @@ export default function RootLayout() {
         <Stack.Screen name="admin" options={{ headerShown: true, title: 'ניהול' }} />
         <Stack.Screen name="admin-ads" options={{ headerShown: true, title: 'ניהול' }} />
         <Stack.Screen name="admin-reviews" options={{ headerShown: true, title: 'ניהול' }} />
+        <Stack.Screen name="admin-stats" options={{ headerShown: true, title: 'ניהול' }} />
       </Stack>
     </AuthProvider>
   );

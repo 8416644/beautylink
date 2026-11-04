@@ -112,6 +112,11 @@ export default function ProfileScreen() {
             onPress={() => router.push('/admin-ads')}
           />
           <Button label="ביקורות" variant="secondary" onPress={() => router.push('/admin-reviews')} />
+          <Button
+            label="נתוני האפליקציה"
+            variant="secondary"
+            onPress={() => router.push('/admin-stats')}
+          />
         </View>
       )}
 
