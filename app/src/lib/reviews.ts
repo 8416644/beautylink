@@ -51,6 +51,36 @@ export async function replyToReview(reviewId: string, reply: string) {
   if (error) throw error;
 }
 
+// The latest reviews across all pros, for the admin to check.
+export type AdminReview = Review & { is_hidden: boolean; pro_id: string; pro_name: string };
+
+export async function fetchAllReviews(): Promise<AdminReview[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select(
+      'id, rating, body, pro_reply, created_at, is_hidden, pro_id, ' +
+        'profiles!reviews_client_user_id_fkey(full_name), pro_profiles(display_name)',
+    )
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  type Row = Omit<AdminReview, 'client_name' | 'pro_name'> & {
+    profiles: { full_name: string } | null;
+    pro_profiles: { display_name: string } | null;
+  };
+  return (data as unknown as Row[]).map(({ profiles, pro_profiles, ...review }) => ({
+    ...review,
+    client_name: profiles?.full_name.trim().split(/\s+/)[0] || 'לקוחה',
+    pro_name: pro_profiles?.display_name ?? '',
+  }));
+}
+
+// Hides a review from the pro's page and rating, or shows it again. Admin only.
+export async function setReviewHidden(id: string, hidden: boolean) {
+  const { error } = await supabase.from('reviews').update({ is_hidden: hidden }).eq('id', id);
+  if (error) throw error;
+}
+
 // The appointments she has already reviewed.
 export async function fetchMyReviewedAppointmentIds(userId: string): Promise<Set<string>> {
   const { data, error } = await supabase.from('reviews').select('appointment_id').eq('client_user_id', userId);

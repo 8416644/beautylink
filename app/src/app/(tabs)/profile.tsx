@@ -111,6 +111,7 @@ export default function ProfileScreen() {
             variant="secondary"
             onPress={() => router.push('/admin-ads')}
           />
+          <Button label="ביקורות" variant="secondary" onPress={() => router.push('/admin-reviews')} />
         </View>
       )}
 
