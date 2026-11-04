@@ -93,6 +93,8 @@ function ProForm({ userId, existing, categories, subcategories }: ProFormProps) 
   const [bio, setBio] = useState(existing?.bio ?? '');
   const [years, setYears] = useState(existing?.years_experience?.toString() ?? '');
   const [city, setCity] = useState(existing?.city ?? '');
+  const [address, setAddress] = useState(existing?.address ?? '');
+  const [showAddress, setShowAddress] = useState(existing?.show_address ?? false);
   const [neighborhood, setNeighborhood] = useState(existing?.neighborhood ?? '');
   const [salon, setSalon] = useState(existing?.works_at_salon ?? false);
   const [home, setHome] = useState(existing?.works_at_home ?? false);
@@ -193,6 +195,8 @@ function ProForm({ userId, existing, categories, subcategories }: ProFormProps) 
           years_experience: yearsNumber,
           city: city.trim(),
           neighborhood: neighborhood.trim() || null,
+          address: address.trim() || null,
+          show_address: showAddress && address.trim() !== '',
           works_at_salon: salon,
           works_at_home: home,
           travels_to_client: travels,
@@ -309,6 +313,30 @@ function ProForm({ userId, existing, categories, subcategories }: ProFormProps) 
       <Section title="מיקום">
         <TextField label="עיר" value={city} onChangeText={setCity} />
         <TextField label="שכונה" value={neighborhood} onChangeText={setNeighborhood} />
+        <TextField
+          label="הכתובת המלאה (לא חובה)"
+          value={address}
+          onChangeText={setAddress}
+          hint="רחוב ומספר, למשל: הרב קוק 12. משמשת לניווט בוויז."
+        />
+        {address.trim() !== '' && (
+          <View style={styles.group}>
+            <Text variant="smallBold">מי רואה את הכתובת?</Text>
+            <View style={styles.chips}>
+              <Chip
+                label="רק לקוחות עם תור מאושר"
+                selected={!showAddress}
+                onPress={() => setShowAddress(false)}
+              />
+              <Chip label="כולם, בדף שלי" selected={showAddress} onPress={() => setShowAddress(true)} />
+            </View>
+            <Text variant="caption" muted>
+              {showAddress
+                ? 'הכתובת וכפתור הניווט בוויז יופיעו בדף שלך לכל מי שנכנסת. מתאים לסלון או סטודיו.'
+                : 'הכתובת וכפתור הניווט יופיעו רק ללקוחה שהתור שלה אושר, ב"התורים שלי". מומלץ כשעובדים מהבית.'}
+            </Text>
+          </View>
+        )}
         <Text variant="smallBold">איפה את עובדת?</Text>
         <View style={styles.chips}>
           <Chip label="בסלון" selected={salon} onPress={() => setSalon(!salon)} />

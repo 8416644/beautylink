@@ -6,6 +6,7 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { PhotoViewer } from '@/components/photo-viewer';
+import { WazeButton } from '@/components/waze-button';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -149,6 +150,18 @@ function ProPage({ pro, priceList, photos, hours, promotions, reviews }: ProPage
             {place}
             {pro.years_experience !== null ? ` · ${pro.years_experience} שנות ניסיון` : ''}
           </Text>
+          {pro.address ? (
+            <View style={styles.addressRow}>
+              <Text variant="small" style={styles.grow}>
+                {pro.address}, {pro.city}
+              </Text>
+              <WazeButton address={pro.address} city={pro.city} />
+            </View>
+          ) : pro.works_at_salon || pro.works_at_home ? (
+            <Text variant="caption" muted>
+              הכתובת המלאה תופיע אחרי שהתור יאושר, ב&quot;התורים שלי&quot;.
+            </Text>
+          ) : null}
           {where.length > 0 && (
             <View style={styles.tags}>
               {where.map((label) => (
@@ -434,6 +447,11 @@ function Tag({ label }: { label: string }) {
 }
 
 const styles = StyleSheet.create({
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
   reviewSummary: {
     flexDirection: 'row',
     alignItems: 'center',

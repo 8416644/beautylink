@@ -13,6 +13,10 @@ export type ProDetails = {
   years_experience: number | null;
   city: string;
   neighborhood: string | null;
+  // Her full address, and whether her page shows it to everyone (with a Waze button);
+  // otherwise only clients with a confirmed appointment see it.
+  address: string | null;
+  show_address: boolean;
   works_at_salon: boolean;
   works_at_home: boolean;
   travels_to_client: boolean;
@@ -48,6 +52,7 @@ export async function fetchOwnProProfile(userId: string): Promise<OwnProProfile 
     .select(
       'display_name, bio, years_experience, city, neighborhood, works_at_salon, works_at_home, ' +
         'travels_to_client, travel_radius_km, instagram_url, tiktok_url, facebook_url, status, ' +
+        'address, show_address, ' +
         'rejection_reason, cover_url, pro_subcategories(subcategory_id)',
     )
     .eq('user_id', userId)

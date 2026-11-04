@@ -6,6 +6,7 @@ import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { StatusBadge } from '@/components/status-badge';
 import { Text } from '@/components/text';
+import { WazeButton } from '@/components/waze-button';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import {
   cancelAppointment,
@@ -168,6 +169,9 @@ function AppointmentCard({
         {' · '}
         {formatPrice(Number(a.price_ils))}
       </Text>
+      {a.location !== 'client_home' && a.address && upcoming && a.status === 'confirmed' && (
+        <WazeButton address={a.address} city={a.city} />
+      )}
 
       {upcoming && a.status === 'confirmed' && (
         <Text variant="caption" muted>

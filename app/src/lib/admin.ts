@@ -20,7 +20,7 @@ export async function fetchProsByStatus(status: ProStatus): Promise<ProForReview
     .select(
       'user_id, display_name, bio, years_experience, city, neighborhood, works_at_salon, ' +
         'works_at_home, travels_to_client, travel_radius_km, instagram_url, tiktok_url, ' +
-        'facebook_url, status, ' +
+        'facebook_url, address, show_address, status, ' +
         'rejection_reason, cover_url, created_at, profiles!pro_profiles_user_id_fkey(full_name, phone), ' +
         'pro_subcategories(subcategories(name))',
     )
