@@ -1,26 +1,30 @@
-import { Image } from 'expo-image';
+import { Image, type ImageSource } from 'expo-image';
 import { router, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { fetchShowingAds, type Ad } from '@/lib/ads';
+import { useAsync } from '@/lib/use-async';
 
 export const ADS_STRIP_HEIGHT = 76;
 const ROTATE_MS = 3500;
 
-type Ad = {
+type StripItem = {
+  key: string;
   title: string;
   subtitle: string;
-  image: number;
+  image: number | ImageSource;
   action: string;
-  href: Href;
+  href: Href | null;
 };
 
-// BeautyLink's own messages, until pros and the admin can place ads. Pictures follow the
+// BeautyLink's own messages, shown while the admin has no ads running. Pictures follow the
 // app's modesty rule: objects and hands, no bodies.
-const HOUSE_ADS: Ad[] = [
+const HOUSE_ADS: StripItem[] = [
   {
+    key: 'house-join',
     title: 'בעלת מקצוע? הצטרפי אלינו',
     subtitle: 'מצטרפים בחינם ומקבלים לקוחות חדשות',
     image: require('@/assets/images/categories/nails.jpg'),
@@ -28,6 +32,7 @@ const HOUSE_ADS: Ad[] = [
     href: '/pro-signup',
   },
   {
+    key: 'house-book',
     title: 'קובעים תור בכמה לחיצות',
     subtitle: 'בוחרים טיפול ושעה פנויה, בלי טלפונים',
     image: require('@/assets/images/categories/makeup.jpg'),
@@ -35,6 +40,7 @@ const HOUSE_ADS: Ad[] = [
     href: '/search',
   },
   {
+    key: 'house-wigs',
     title: 'פאות בעיצוב אישי',
     subtitle: 'מעצבות פאות מומלצות, קרוב אלייך',
     image: require('@/assets/images/categories/wigs.jpg'),
@@ -43,20 +49,43 @@ const HOUSE_ADS: Ad[] = [
   },
 ];
 
-// A strip of ads that changes every few seconds; a tap opens the ad's page.
-export function AdsStrip() {
-  const [index, setIndex] = useState(0);
+const LOGO = require('@/assets/images/logo.png');
 
+function toStripItem(ad: Ad): StripItem {
+  return {
+    key: ad.id,
+    title: ad.title,
+    subtitle: ad.subtitle,
+    image: ad.image_url ? { uri: ad.image_url } : LOGO,
+    action: ad.action_label,
+    href: ad.pro_id
+      ? { pathname: '/pro/[id]', params: { id: ad.pro_id } }
+      : ad.category_slug
+        ? { pathname: '/search', params: { category: ad.category_slug } }
+        : null,
+  };
+}
+
+// A strip of ads that changes every few seconds; a tap opens the ad's page. The admin's
+// ads when any are running, BeautyLink's own otherwise.
+export function AdsStrip() {
+  const { state } = useAsync('ads', fetchShowingAds);
+  const running = state.status === 'ready' ? state.data.map(toStripItem) : [];
+  const items = running.length > 0 ? running : HOUSE_ADS;
+
+  const [tick, setTick] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => setIndex((i) => (i + 1) % HOUSE_ADS.length), ROTATE_MS);
+    const timer = setInterval(() => setTick((t) => t + 1), ROTATE_MS);
     return () => clearInterval(timer);
   }, []);
 
-  const ad = HOUSE_ADS[index];
+  const index = tick % items.length;
+  const ad = items[index];
   return (
     <Pressable
       style={styles.strip}
-      onPress={() => router.push(ad.href)}
+      onPress={() => ad.href && router.push(ad.href)}
+      disabled={ad.href === null}
       accessibilityRole="link"
       accessibilityLabel={`מודעה: ${ad.title}. ${ad.subtitle}`}>
       <Image source={ad.image} style={styles.image} contentFit="cover" transition={300} />
@@ -68,19 +97,21 @@ export function AdsStrip() {
           {ad.subtitle}
         </Text>
       </View>
-      <View style={styles.action}>
-        <Text variant="caption" style={styles.actionText}>
-          {ad.action}
-        </Text>
-      </View>
+      {ad.href && (
+        <View style={styles.action}>
+          <Text variant="caption" style={styles.actionText}>
+            {ad.action}
+          </Text>
+        </View>
+      )}
       <View style={styles.tag}>
         <Text variant="caption" style={styles.tagText}>
           מודעה
         </Text>
       </View>
       <View style={styles.dots}>
-        {HOUSE_ADS.map((_, i) => (
-          <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
+        {items.map((item, i) => (
+          <View key={item.key} style={[styles.dot, i === index && styles.dotActive]} />
         ))}
       </View>
     </Pressable>
