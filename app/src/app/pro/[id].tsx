@@ -9,6 +9,7 @@ import { PhotoViewer } from '@/components/photo-viewer';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { fetchProPromotions, formatDay as formatAdDay, type Ad } from '@/lib/ads';
 import { fetchWorkingHours, formatShifts, WEEKDAYS, type Shift } from '@/lib/hours';
 import { isWebLink } from '@/lib/links';
 import { fetchPortfolio, type PortfolioItem } from '@/lib/portfolio';
@@ -20,13 +21,15 @@ import { useAsync } from '@/lib/use-async';
 export default function ProPageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, reload } = useAsync(id ?? null, async () => {
-    const [pro, priceList, photos, hours] = await Promise.all([
+    const [pro, priceList, photos, hours, promotions] = await Promise.all([
       fetchPublicPro(id!),
       fetchActiveServices(id!),
       fetchPortfolio(id!),
       fetchWorkingHours(id!),
+      // A page still shows if the promotions cannot load.
+      fetchProPromotions(id!).catch(() => [] as Ad[]),
     ]);
-    return pro ? { pro, priceList, photos, hours } : null;
+    return pro ? { pro, priceList, photos, hours, promotions } : null;
   });
 
   if (state.status === 'loading') {
@@ -59,8 +62,8 @@ export default function ProPageScreen() {
     );
   }
 
-  const { pro, priceList, photos, hours } = state.data;
-  return <ProPage pro={pro} priceList={priceList} photos={photos} hours={hours} />;
+  const { pro, priceList, photos, hours, promotions } = state.data;
+  return <ProPage pro={pro} priceList={priceList} photos={photos} hours={hours} promotions={promotions} />;
 }
 
 type ProPageProps = {
@@ -68,9 +71,10 @@ type ProPageProps = {
   priceList: Service[];
   photos: PortfolioItem[];
   hours: Shift[];
+  promotions: Ad[];
 };
 
-function ProPage({ pro, priceList, photos, hours }: ProPageProps) {
+function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
   const [viewing, setViewing] = useState<PortfolioItem | null>(null);
   const place = [pro.neighborhood, pro.city].filter(Boolean).join(', ');
   const where = [
@@ -113,6 +117,25 @@ function ProPage({ pro, priceList, photos, hours }: ProPageProps) {
         {place}
         {pro.years_experience !== null ? ` · ${pro.years_experience} שנות ניסיון` : ''}
       </Text>
+
+      {promotions.map((promo) => (
+        <View key={promo.id} style={styles.promo}>
+          <View style={styles.promoTag}>
+            <Text variant="caption" style={styles.promoTagText}>
+              מבצע
+            </Text>
+          </View>
+          <Text variant="heading" style={styles.promoText}>
+            {promo.title}
+          </Text>
+          {promo.subtitle ? <Text style={styles.promoText}>{promo.subtitle}</Text> : null}
+          {promo.ends_on ? (
+            <Text variant="caption" style={styles.promoMuted}>
+              בתוקף עד {formatAdDay(promo.ends_on)}
+            </Text>
+          ) : null}
+        </View>
+      ))}
 
       {canBook && (
         <Button label="קביעת תור" onPress={() => router.push(`/book/${pro.user_id}`)} />
@@ -271,6 +294,28 @@ function Tag({ label }: { label: string }) {
 }
 
 const styles = StyleSheet.create({
+  // Her running promotions, in ink so they stand out from the rest of the page.
+  promo: {
+    gap: Spacing.one,
+    padding: Spacing.four,
+    borderRadius: Radius.medium,
+    backgroundColor: Colors.ink,
+  },
+  promoTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.inkAccent,
+  },
+  promoTagText: {
+    color: Colors.ink,
+  },
+  promoText: {
+    color: Colors.onInk,
+  },
+  promoMuted: {
+    color: Colors.onInkMuted,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

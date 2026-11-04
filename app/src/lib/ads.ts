@@ -39,6 +39,11 @@ export async function fetchShowingAds(): Promise<Ad[]> {
   );
 }
 
+// The ads showing today that lead to this pro: her promotions, shown on her page.
+export async function fetchProPromotions(proId: string): Promise<Ad[]> {
+  return (await fetchShowingAds()).filter((ad) => ad.pro_id === proId);
+}
+
 // Every ad, for the admin.
 export async function fetchAllAds(): Promise<Ad[]> {
   const { data, error } = await supabase
@@ -50,20 +55,24 @@ export async function fetchAllAds(): Promise<Ad[]> {
   return data as Ad[];
 }
 
+// What happens to an ad's picture when it is saved: kept as it is, a new photo uploaded,
+// a photo from a pro's portfolio used by its link, or no picture.
+export type AdPicture =
+  | { kind: 'keep' }
+  | { kind: 'upload'; asset: ImagePickerAsset }
+  | { kind: 'portfolio'; url: string }
+  | { kind: 'none' };
+
 // Adds an ad (at the end of the strip) or updates one. A new picture replaces the old one.
-export async function saveAd(
-  input: AdInput,
-  existing: Ad | null,
-  picture: ImagePickerAsset | null,
-  removeImage: boolean,
-  sort: number,
-) {
+export async function saveAd(input: AdInput, existing: Ad | null, picture: AdPicture, sort: number) {
   let image_url = existing?.image_url ?? null;
   let uploaded: string | null = null;
-  if (picture) {
-    uploaded = (await uploadPicture(BUCKET, 'ads', picture)).publicUrl;
+  if (picture.kind === 'upload') {
+    uploaded = (await uploadPicture(BUCKET, 'ads', picture.asset)).publicUrl;
     image_url = uploaded;
-  } else if (removeImage) {
+  } else if (picture.kind === 'portfolio') {
+    image_url = picture.url;
+  } else if (picture.kind === 'none') {
     image_url = null;
   }
 
@@ -75,7 +84,8 @@ export async function saveAd(
     if (uploaded) await removePicture(BUCKET, uploaded);
     throw error;
   }
-  // The old picture is no longer used.
+  // The old picture is no longer used. Only uploads to the ads bucket are removed, never a
+  // pro's portfolio photo.
   if (existing?.image_url && existing.image_url !== image_url) {
     await removePicture(BUCKET, existing.image_url);
   }
@@ -89,6 +99,7 @@ export async function setAdActive(id: string, isActive: boolean) {
 export async function deleteAd(ad: Ad) {
   const { error } = await supabase.from('ads').delete().eq('id', ad.id);
   if (error) throw error;
+  // Removes only an upload to the ads bucket; a portfolio photo's link is left alone.
   if (ad.image_url) await removePicture(BUCKET, ad.image_url);
 }
 

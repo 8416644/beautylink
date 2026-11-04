@@ -8,7 +8,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { fetchShowingAds, type Ad } from '@/lib/ads';
 import { useAsync } from '@/lib/use-async';
 
-export const ADS_STRIP_HEIGHT = 76;
+export const ADS_STRIP_HEIGHT = 84;
 const ROTATE_MS = 3500;
 
 type StripItem = {
@@ -93,7 +93,7 @@ export function AdsStrip() {
         <Text variant="smallBold" numberOfLines={1}>
           {ad.title}
         </Text>
-        <Text variant="caption" muted numberOfLines={1}>
+        <Text variant="caption" muted numberOfLines={2}>
           {ad.subtitle}
         </Text>
       </View>

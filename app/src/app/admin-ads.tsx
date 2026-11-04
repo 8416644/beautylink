@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { DatePickerModal } from '@/components/date-picker-modal';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
@@ -18,9 +19,12 @@ import {
   saveAd,
   setAdActive,
   type Ad,
+  type AdPicture,
 } from '@/lib/ads';
 import { useAuth } from '@/lib/auth';
 import { fetchCategories, type Category } from '@/lib/categories';
+import { today } from '@/lib/dates';
+import { fetchPortfolio } from '@/lib/portfolio';
 import { photoProblem, pickerOptions } from '@/lib/upload';
 import { useAsync } from '@/lib/use-async';
 
@@ -227,8 +231,9 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
   const [categorySlug, setCategorySlug] = useState<string | null>(ad?.category_slug ?? null);
   const [startsOn, setStartsOn] = useState(ad?.starts_on ? formatDay(ad.starts_on) : '');
   const [endsOn, setEndsOn] = useState(ad?.ends_on ? formatDay(ad.ends_on) : '');
-  const [picture, setPicture] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [removeImage, setRemoveImage] = useState(false);
+  const [picture, setPicture] = useState<AdPicture>({ kind: 'keep' });
+  const [choosingFromPortfolio, setChoosingFromPortfolio] = useState(false);
+  const [picking, setPicking] = useState<'starts' | 'ends' | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -253,8 +258,7 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
     const asset = result.assets[0];
     const problem = photoProblem(asset);
     if (problem) return setError(problem);
-    setPicture(asset);
-    setRemoveImage(false);
+    setPicture({ kind: 'upload', asset });
   }
 
   async function submit() {
@@ -274,7 +278,6 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
         },
         ad,
         picture,
-        removeImage,
         sort,
       );
       onDone(true);
@@ -284,7 +287,14 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
     }
   }
 
-  const shownImage = picture?.uri ?? (removeImage ? null : ad?.image_url ?? null);
+  const shownImage =
+    picture.kind === 'upload'
+      ? picture.asset.uri
+      : picture.kind === 'portfolio'
+        ? picture.url
+        : picture.kind === 'none'
+          ? null
+          : (ad?.image_url ?? null);
 
   return (
     <Screen>
@@ -310,20 +320,25 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
             <View style={[styles.preview, styles.noImage]} />
           )}
           <View style={[styles.grow, styles.actions]}>
-            <Button label={shownImage ? 'החלפת תמונה' : 'בחירת תמונה'} variant="secondary" onPress={pick} />
+            <Button label="מהגלריה" variant="secondary" onPress={pick} />
+            <Button
+              label="מתיק עבודות"
+              variant="secondary"
+              onPress={() => setChoosingFromPortfolio(true)}
+            />
             {shownImage ? (
-              <Button
-                label="בלי תמונה"
-                variant="secondary"
-                onPress={() => {
-                  setPicture(null);
-                  setRemoveImage(true);
-                }}
-              />
+              <Button label="בלי תמונה" variant="secondary" onPress={() => setPicture({ kind: 'none' })} />
             ) : null}
           </View>
         </View>
       </View>
+      <PortfolioPicker
+        visible={choosingFromPortfolio}
+        pros={pros}
+        initialProId={target === 'pro' ? proId : null}
+        onPick={(url) => setPicture({ kind: 'portfolio', url })}
+        onClose={() => setChoosingFromPortfolio(false)}
+      />
 
       <View style={styles.section}>
         <Text variant="smallBold">לחיצה על המודעה מובילה ל:</Text>
@@ -370,13 +385,25 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
       <View style={styles.section}>
         <Text variant="smallBold">מתי המודעה מופיעה (לא חובה)</Text>
         <View style={styles.row}>
-          <View style={styles.grow}>
+          <View style={[styles.grow, styles.actions]}>
             <TextField label="מתאריך" ltr value={startsOn} onChangeText={setStartsOn} placeholder="1.12.2026" />
+            <Chip label="בחירה מלוח השנה" selected={false} onPress={() => setPicking('starts')} />
           </View>
-          <View style={styles.grow}>
+          <View style={[styles.grow, styles.actions]}>
             <TextField label="עד תאריך" ltr value={endsOn} onChangeText={setEndsOn} placeholder="31.12.2026" />
+            <Chip label="בחירה מלוח השנה" selected={false} onPress={() => setPicking('ends')} />
           </View>
         </View>
+        <DatePickerModal
+          visible={picking !== null}
+          title={picking === 'ends' ? 'עד איזה תאריך?' : 'מאיזה תאריך?'}
+          value={(picking === 'ends' ? ends : starts) || null}
+          // No days in the past, and the end cannot come before the start.
+          minDay={picking === 'ends' && starts && starts > today() ? starts : today()}
+          onPick={(day) => (picking === 'ends' ? setEndsOn : setStartsOn)(formatDay(day))}
+          onClear={() => (picking === 'ends' ? setEndsOn : setStartsOn)('')}
+          onClose={() => setPicking(null)}
+        />
         <Text variant="caption" muted>
           בלי תאריכים, המודעה מופיעה עד שמכבים אותה.
         </Text>
@@ -395,6 +422,80 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
       <Button label="שמירה" onPress={submit} disabled={problems.length > 0} busy={busy} />
       <Button label="ביטול" variant="secondary" onPress={() => onDone(false)} />
     </Screen>
+  );
+}
+
+type PortfolioPickerProps = {
+  visible: boolean;
+  pros: Pro[];
+  initialProId: string | null;
+  onPick: (url: string) => void;
+  onClose: () => void;
+};
+
+// A window with the portfolio photos of the pro chosen at its top, to use one in the ad.
+function PortfolioPicker({ visible, pros, initialProId, onPick, onClose }: PortfolioPickerProps) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {visible && <PortfolioPickerWindow pros={pros} initialProId={initialProId} onPick={onPick} onClose={onClose} />}
+    </Modal>
+  );
+}
+
+function PortfolioPickerWindow({ pros, initialProId, onPick, onClose }: Omit<PortfolioPickerProps, 'visible'>) {
+  const [proId, setProId] = useState<string | null>(initialProId ?? pros[0]?.user_id ?? null);
+  const { state, reload } = useAsync(proId, () => fetchPortfolio(proId!));
+
+  return (
+    <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="סגירה">
+      {/* Taps inside the window do not close it. */}
+      <Pressable style={styles.window} onPress={() => {}}>
+        <Text variant="heading">תמונה מתיק עבודות</Text>
+        {pros.length === 0 ? (
+          <Text muted>עדיין אין בעלות מקצוע מאושרות.</Text>
+        ) : (
+          <>
+            <View style={styles.chips}>
+              {pros.map((p) => (
+                <Chip
+                  key={p.user_id}
+                  label={p.display_name}
+                  selected={proId === p.user_id}
+                  onPress={() => setProId(p.user_id)}
+                />
+              ))}
+            </View>
+            <ScrollView style={styles.photosScroll} contentContainerStyle={styles.photos}>
+              {state.status === 'loading' ? (
+                <Text muted>טוענים…</Text>
+              ) : state.status === 'error' ? (
+                <View style={styles.actions}>
+                  <Text muted>לא הצלחנו לטעון את התמונות.</Text>
+                  <Button label="לנסות שוב" variant="secondary" onPress={reload} />
+                </View>
+              ) : state.data.length === 0 ? (
+                <Text muted>אין עדיין תמונות בתיק העבודות שלה.</Text>
+              ) : (
+                state.data.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={styles.photoCell}
+                    onPress={() => {
+                      onPick(item.media_url);
+                      onClose();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.caption ?? 'תמונה מתיק העבודות'}>
+                    <Image source={{ uri: item.media_url }} style={styles.photo} contentFit="cover" />
+                  </Pressable>
+                ))
+              )}
+            </ScrollView>
+          </>
+        )}
+        <Button label="ביטול" variant="secondary" onPress={onClose} />
+      </Pressable>
+    </Pressable>
   );
 }
 
@@ -448,5 +549,40 @@ const styles = StyleSheet.create({
   },
   error: {
     color: Colors.accentPressed,
+  },
+  backdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: Spacing.four,
+    backgroundColor: 'rgba(26, 20, 22, 0.45)',
+  },
+  window: {
+    width: '100%',
+    maxWidth: 420,
+    maxHeight: '85%',
+    alignSelf: 'center',
+    gap: Spacing.three,
+    padding: Spacing.four,
+    borderRadius: Radius.medium,
+    backgroundColor: Colors.background,
+  },
+  photosScroll: {
+    flexGrow: 0,
+  },
+  photos: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  photoCell: {
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: Radius.small,
+    overflow: 'hidden',
+    backgroundColor: Colors.placeholder,
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
   },
 });
