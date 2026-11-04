@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef, type ComponentRef, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,12 +31,24 @@ export function Screen({ children, footer, footerHeight = 0, inTabs = true }: Sc
   const bottomRoom =
     insets.bottom + TAB_BAR_SPACE + (footer ? footerHeight + Spacing.two : 0);
   const footerBottom = insets.bottom + Spacing.two + (inTabs ? TAB_BAR_HEIGHT + Spacing.two : 0);
+
+  // Every screen shows from its top whenever it is opened: a tab keeps its screen alive
+  // between visits, so without this it would come back where it was left scrolled.
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  useFocusEffect(
+    useCallback(() => {
+      scrollRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+    }, []),
+  );
+
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.safe}
         behavior={Platform.OS === 'android' ? 'padding' : undefined}>
         <ScrollView
+          ref={scrollRef}
+          contentOffset={{ x: 0, y: 0 }}
           contentContainerStyle={[styles.content, { paddingBottom: bottomRoom }]}
           automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled">
