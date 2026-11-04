@@ -22,16 +22,17 @@ type ScreenProps = {
 // itself, and on Android the screen shrinks to the space above the keyboard.
 export function Screen({ children, footer, footerHeight = 0 }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  // Room under the content, so the last item can scroll clear of everything pinned at the
+  // bottom: the phone's own bottom bar, the floating tab bar and the footer.
+  const bottomRoom =
+    insets.bottom + TAB_BAR_SPACE + (footer ? footerHeight + Spacing.two : 0);
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.safe}
         behavior={Platform.OS === 'android' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            footer ? { paddingBottom: TAB_BAR_SPACE + footerHeight } : null,
-          ]}
+          contentContainerStyle={[styles.content, { paddingBottom: bottomRoom }]}
           automaticallyAdjustKeyboardInsets
           keyboardShouldPersistTaps="handled">
           {children}
@@ -58,7 +59,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Spacing.five,
     paddingTop: Spacing.four,
-    paddingBottom: TAB_BAR_SPACE,
     gap: Spacing.six,
   },
   // Lines up with the floating tab bar's sides.

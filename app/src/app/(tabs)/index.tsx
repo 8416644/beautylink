@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AdsStrip, ADS_STRIP_HEIGHT } from '@/components/ads-strip';
@@ -15,6 +16,12 @@ const IMAGE_SIZE = 52;
 
 export default function HomeScreen() {
   const { state, reload } = useCategories();
+  // Four cards a row, sized from the grid's measured width: a percentage width can round
+  // past the row on some phones and push the fourth card down.
+  const [gridWidth, setGridWidth] = useState(0);
+  const tileWidth = gridWidth > 0 ? Math.floor((gridWidth - 3 * Spacing.two) / 4) : undefined;
+  // Flattened: Link's asChild accepts a single style object, not a list.
+  const tile = StyleSheet.flatten([styles.category, tileWidth !== undefined && { width: tileWidth }]);
 
   return (
     <Screen footer={<AdsStrip />} footerHeight={ADS_STRIP_HEIGHT}>
@@ -58,10 +65,10 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         ) : (
-          <View style={styles.grid}>
+          <View style={styles.grid} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
             {state.status === 'loading'
               ? Array.from({ length: PLACEHOLDER_TILES }, (_, i) => (
-                  <View key={i} style={styles.category}>
+                  <View key={i} style={tile}>
                     <View style={[styles.placeholderImage, styles.placeholder]} />
                     <View style={styles.placeholderName} />
                   </View>
@@ -72,7 +79,7 @@ export default function HomeScreen() {
                     href={{ pathname: '/search', params: { category: category.slug } }}
                     asChild>
                     {/* A plain style: Link's asChild drops a style function on the web. */}
-                    <Pressable style={styles.category} accessibilityRole="link">
+                    <Pressable style={tile} accessibilityRole="link">
                       <CategoryImage icon={category.icon ?? category.slug} size={IMAGE_SIZE} />
                       <Text variant="caption" style={styles.categoryName}>
                         {category.name}
@@ -137,7 +144,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   category: {
-    width: '23%',
+    width: '22%', // until the grid is measured
     alignItems: 'center',
     gap: Spacing.one,
     paddingTop: Spacing.three,
