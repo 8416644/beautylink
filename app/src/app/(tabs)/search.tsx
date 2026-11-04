@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { CategoryIcon } from '@/components/category-icon';
+import { CategoryImage } from '@/components/category-image';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
@@ -33,11 +33,7 @@ export default function SearchScreen() {
                 onPress={() => router.setParams({ category: category.slug })}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}>
-                <CategoryIcon
-                  slug={category.icon ?? category.slug}
-                  size={18}
-                  color={active ? Colors.surface : Colors.accentOnTint}
-                />
+                <CategoryImage icon={category.icon ?? category.slug} size={24} />
                 <Text variant="smallBold" style={active && styles.chipTextActive}>
                   {category.name}
                 </Text>
@@ -167,8 +163,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   chipActive: {
-    backgroundColor: Colors.accent,
-    borderColor: Colors.accent,
+    backgroundColor: Colors.ink,
+    borderColor: Colors.ink,
   },
   chipTextActive: {
     color: Colors.surface,
@@ -228,7 +224,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.ink,
   },
   retryText: {
     color: Colors.surface,

@@ -14,14 +14,14 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.accent,
+        tabBarActiveTintColor: Colors.ink,
         tabBarInactiveTintColor: Colors.textSecondary,
         tabBarStyle: [
           { backgroundColor: Colors.surface, borderTopColor: Colors.border },
           // iOS and Android size the bar around the safe area; the web bar needs room set by hand.
           Platform.OS === 'web' && { height: 64, paddingTop: 6, paddingBottom: 8 },
         ],
-        // Heebo's letters are taller than the default label box, so give it room.
+        // Hebrew letters are taller than the default label box, so give them room.
         tabBarLabelStyle: { fontFamily: Fonts.medium, fontSize: 11, lineHeight: 16 },
         sceneStyle: { backgroundColor: Colors.background },
       }}>

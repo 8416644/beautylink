@@ -1,5 +1,4 @@
-import { Heebo_400Regular, Heebo_500Medium, Heebo_700Bold } from '@expo-google-fonts/heebo';
-import { Rubik_500Medium, Rubik_700Bold } from '@expo-google-fonts/rubik';
+import { Rubik_400Regular, Rubik_500Medium } from '@expo-google-fonts/rubik';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -14,11 +13,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Heebo_400Regular,
-    Heebo_500Medium,
-    Heebo_700Bold,
+    Rubik_400Regular,
     Rubik_500Medium,
-    Rubik_700Bold,
   });
   const ready = fontsLoaded || fontError != null;
 
@@ -49,7 +45,7 @@ export default function RootLayout() {
           headerShown: false,
           contentStyle: { backgroundColor: Colors.background },
           headerStyle: { backgroundColor: Colors.background },
-          headerTintColor: Colors.accent,
+          headerTintColor: Colors.ink,
           headerTitleStyle: { fontFamily: Fonts.medium, color: Colors.text },
           headerShadowVisible: false,
           headerBackButtonDisplayMode: 'minimal',

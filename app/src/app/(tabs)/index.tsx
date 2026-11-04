@@ -1,14 +1,15 @@
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { CategoryIcon } from '@/components/category-icon';
+import { CategoryImage } from '@/components/category-image';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useCategories } from '@/lib/categories';
 
-const PLACEHOLDER_TILES = 8;
+const PLACEHOLDER_TILES = 6;
+const IMAGE_SIZE = 96;
 
 export default function HomeScreen() {
   const { state, reload } = useCategories();
@@ -46,36 +47,24 @@ export default function HomeScreen() {
             {state.status === 'loading'
               ? Array.from({ length: PLACEHOLDER_TILES }, (_, i) => (
                   <View key={i} style={styles.category}>
-                    <View style={[styles.categoryIcon, styles.placeholder]} />
+                    <View style={[styles.placeholderImage, styles.placeholder]} />
                     <View style={styles.placeholderName} />
                   </View>
                 ))
-              : state.categories.map((category, i) => {
-                  // Tiles alternate between the two brand tints, as in the designs.
-                  const rose = i % 2 === 0;
-                  return (
-                    <Link
-                      key={category.id}
-                      href={{ pathname: '/search', params: { category: category.slug } }}
-                      asChild>
-                      <Pressable style={styles.category} accessibilityRole="link">
-                        <View
-                          style={[
-                            styles.categoryIcon,
-                            { backgroundColor: rose ? Colors.accentTint : Colors.secondaryTint },
-                          ]}>
-                          <CategoryIcon
-                            slug={category.icon ?? category.slug}
-                            color={rose ? Colors.accentOnTint : Colors.secondaryOnTint}
-                          />
-                        </View>
-                        <Text variant="small" style={styles.categoryName}>
-                          {category.name}
-                        </Text>
-                      </Pressable>
-                    </Link>
-                  );
-                })}
+              : state.categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={{ pathname: '/search', params: { category: category.slug } }}
+                    asChild>
+                    {/* A plain style: Link's asChild drops a style function on the web. */}
+                    <Pressable style={styles.category} accessibilityRole="link">
+                      <CategoryImage icon={category.icon ?? category.slug} size={IMAGE_SIZE} />
+                      <Text variant="heading" style={styles.categoryName}>
+                        {category.name}
+                      </Text>
+                    </Pressable>
+                  </Link>
+                ))}
           </View>
         )}
       </View>
@@ -101,22 +90,28 @@ const styles = StyleSheet.create({
   section: {
     gap: Spacing.three,
   },
+  // Two cards a row, as in the original BeautyLink design.
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    rowGap: Spacing.four,
+    justifyContent: 'space-between',
+    rowGap: Spacing.three,
   },
   category: {
-    width: '25%',
+    width: '48%',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: Spacing.three,
+    paddingVertical: Spacing.five,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.medium,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  categoryIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+  placeholderImage: {
+    width: IMAGE_SIZE,
+    height: IMAGE_SIZE,
+    borderRadius: IMAGE_SIZE / 2,
   },
   categoryName: {
     textAlign: 'center',
@@ -143,7 +138,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.two,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.ink,
   },
   retryText: {
     color: Colors.surface,

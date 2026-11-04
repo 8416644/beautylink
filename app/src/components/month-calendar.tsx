@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.accent,
   },
   active: {
-    backgroundColor: Colors.accent,
-    borderColor: Colors.accent,
+    backgroundColor: Colors.ink,
+    borderColor: Colors.ink,
   },
   activeText: {
     color: Colors.surface,

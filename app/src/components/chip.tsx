@@ -34,11 +34,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   selected: {
-    backgroundColor: Colors.accentTint,
-    borderColor: Colors.accent,
+    backgroundColor: Colors.ink,
+    borderColor: Colors.ink,
   },
   selectedText: {
-    color: Colors.accentOnTint,
+    color: Colors.onInk,
     fontFamily: Fonts.bold,
   },
 });

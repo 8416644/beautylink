@@ -26,7 +26,7 @@ export function Button({ label, onPress, variant = 'primary', disabled, busy }: 
         (disabled || busy) && styles.disabled,
       ]}>
       {busy ? (
-        <ActivityIndicator color={primary ? Colors.surface : Colors.accent} />
+        <ActivityIndicator color={primary ? Colors.onInk : Colors.ink} />
       ) : (
         <Text variant="smallBold" style={primary ? styles.primaryText : styles.secondaryText}>
           {label}
@@ -44,11 +44,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // The main action is ink; everything else stays light.
   primary: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.ink,
   },
   primaryPressed: {
-    backgroundColor: Colors.accentPressed,
+    backgroundColor: Colors.inkPressed,
   },
   secondary: {
     backgroundColor: Colors.surface,
@@ -62,11 +63,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   primaryText: {
-    color: Colors.surface,
+    color: Colors.onInk,
     textAlign: 'center',
   },
   secondaryText: {
-    color: Colors.accentOnTint,
+    color: Colors.ink,
     textAlign: 'center',
   },
 });
