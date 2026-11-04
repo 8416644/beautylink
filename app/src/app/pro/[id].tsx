@@ -10,6 +10,7 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { fetchProPromotions, formatDay as formatAdDay, type Ad } from '@/lib/ads';
+import { fetchProReviews, type Review } from '@/lib/reviews';
 import { fetchWorkingHours, formatShifts, WEEKDAYS, type Shift } from '@/lib/hours';
 import { isWebLink } from '@/lib/links';
 import { fetchPortfolio, type PortfolioItem } from '@/lib/portfolio';
@@ -21,15 +22,16 @@ import { useAsync } from '@/lib/use-async';
 export default function ProPageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, reload } = useAsync(id ?? null, async () => {
-    const [pro, priceList, photos, hours, promotions] = await Promise.all([
+    const [pro, priceList, photos, hours, promotions, reviews] = await Promise.all([
       fetchPublicPro(id!),
       fetchActiveServices(id!),
       fetchPortfolio(id!),
       fetchWorkingHours(id!),
       // A page still shows if the promotions cannot load.
       fetchProPromotions(id!).catch(() => [] as Ad[]),
+      fetchProReviews(id!).catch(() => [] as Review[]),
     ]);
-    return pro ? { pro, priceList, photos, hours, promotions } : null;
+    return pro ? { pro, priceList, photos, hours, promotions, reviews } : null;
   });
 
   if (state.status === 'loading') {
@@ -62,8 +64,17 @@ export default function ProPageScreen() {
     );
   }
 
-  const { pro, priceList, photos, hours, promotions } = state.data;
-  return <ProPage pro={pro} priceList={priceList} photos={photos} hours={hours} promotions={promotions} />;
+  const { pro, priceList, photos, hours, promotions, reviews } = state.data;
+  return (
+    <ProPage
+      pro={pro}
+      priceList={priceList}
+      photos={photos}
+      hours={hours}
+      promotions={promotions}
+      reviews={reviews}
+    />
+  );
 }
 
 type ProPageProps = {
@@ -72,9 +83,10 @@ type ProPageProps = {
   photos: PortfolioItem[];
   hours: Shift[];
   promotions: Ad[];
+  reviews: Review[];
 };
 
-function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
+function ProPage({ pro, priceList, photos, hours, promotions, reviews }: ProPageProps) {
   const [viewing, setViewing] = useState<PortfolioItem | null>(null);
   // Her works first when she has photos, otherwise her price list.
   const [tab, setTab] = useState<TabKey>(photos.length > 0 ? 'works' : 'prices');
@@ -229,6 +241,49 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
           </View>
         ))}
 
+      {tab === 'reviews' &&
+        (reviews.length === 0 ? (
+          <Empty text="עדיין אין ביקורות. ביקורות כותבות רק לקוחות שהיו אצלה בתור." />
+        ) : (
+          <>
+            <View style={styles.reviewSummary}>
+              <Text variant="title">{Number(pro.rating_avg).toFixed(1)}</Text>
+              <View>
+                <Stars rating={Math.round(Number(pro.rating_avg))} />
+                <Text variant="caption" muted>
+                  {reviews.length === 1 ? 'ביקורת אחת' : `${reviews.length} ביקורות`}
+                </Text>
+              </View>
+            </View>
+            {reviews.map((review) => (
+              <View key={review.id} style={styles.card}>
+                <View style={styles.reviewHeader}>
+                  <Text variant="smallBold" style={styles.grow}>
+                    {review.client_name}
+                  </Text>
+                  <Text variant="caption" muted>
+                    {new Date(review.created_at).toLocaleDateString('he-IL', {
+                      timeZone: 'Asia/Jerusalem',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </Text>
+                </View>
+                <Stars rating={review.rating} />
+                {review.body ? <Text variant="small">{review.body}</Text> : null}
+                {review.pro_reply ? (
+                  <View style={styles.reply}>
+                    <Text variant="caption" style={styles.replyTitle}>
+                      תגובת {pro.display_name}
+                    </Text>
+                    <Text variant="small">{review.pro_reply}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ))}
+          </>
+        ))}
+
       {tab === 'hours' &&
         (hours.length === 0 ? (
           <Empty text="עדיין לא הוגדרו שעות פעילות." />
@@ -328,6 +383,18 @@ function BookButton({ proId, from }: { proId: string; from: number }) {
   );
 }
 
+function Stars({ rating }: { rating: number }) {
+  return (
+    <Text style={styles.stars} accessibilityLabel={`${rating} כוכבים מתוך 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Text key={n} style={n <= rating ? styles.starOn : styles.starOff}>
+          ★
+        </Text>
+      ))}
+    </Text>
+  );
+}
+
 function Empty({ text }: { text: string }) {
   return (
     <View style={styles.card}>
@@ -336,12 +403,13 @@ function Empty({ text }: { text: string }) {
   );
 }
 
-type TabKey = 'works' | 'prices' | 'hours' | 'about';
+type TabKey = 'works' | 'prices' | 'reviews' | 'hours' | 'about';
 
 // The parts of her page, one at a time.
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'works', label: 'עבודות' },
   { key: 'prices', label: 'מחירון' },
+  { key: 'reviews', label: 'ביקורות' },
   { key: 'hours', label: 'שעות' },
   { key: 'about', label: 'אודות' },
 ];
@@ -366,6 +434,35 @@ function Tag({ label }: { label: string }) {
 }
 
 const styles = StyleSheet.create({
+  reviewSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  stars: {
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  starOn: {
+    color: Colors.star,
+  },
+  starOff: {
+    color: Colors.border,
+  },
+  reply: {
+    gap: 2,
+    padding: Spacing.three,
+    borderRadius: Radius.small,
+    backgroundColor: Colors.accentTint,
+  },
+  replyTitle: {
+    color: Colors.accentOnTint,
+  },
   bookButton: {
     height: BOOK_BUTTON_HEIGHT,
     flexDirection: 'row',
