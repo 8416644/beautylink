@@ -99,7 +99,11 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           <Text variant="heading">ניהול</Text>
           <Button label="אישור בעלות מקצוע" onPress={() => router.push('/admin')} />
-          <Button label="ניהול מודעות" variant="secondary" onPress={() => router.push('/admin-ads')} />
+          <Button
+            label="מודעות ומומלצת השבוע"
+            variant="secondary"
+            onPress={() => router.push('/admin-ads')}
+          />
         </View>
       )}
 

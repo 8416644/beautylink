@@ -24,6 +24,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { fetchCategories, type Category } from '@/lib/categories';
 import { today } from '@/lib/dates';
+import { fetchFeaturedProId, setFeaturedPro } from '@/lib/featured';
 import { fetchPortfolio } from '@/lib/portfolio';
 import { photoProblem, pickerOptions } from '@/lib/upload';
 import { useAsync } from '@/lib/use-async';
@@ -36,8 +37,13 @@ export default function AdminAdsScreen() {
   const { loading, session, profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
   const { state, reload } = useAsync(isAdmin ? 'admin-ads' : null, async () => {
-    const [ads, pros, categories] = await Promise.all([fetchAllAds(), fetchProChoices(), fetchCategories()]);
-    return { ads, pros, categories };
+    const [ads, pros, categories, featuredId] = await Promise.all([
+      fetchAllAds(),
+      fetchProChoices(),
+      fetchCategories(),
+      fetchFeaturedProId(),
+    ]);
+    return { ads, pros, categories, featuredId };
   });
   const [editing, setEditing] = useState<Ad | 'new' | null>(null);
 
@@ -79,7 +85,7 @@ export default function AdminAdsScreen() {
     );
   }
 
-  const { ads, pros, categories } = state.data;
+  const { ads, pros, categories, featuredId } = state.data;
 
   if (editing !== null) {
     return (
@@ -98,6 +104,8 @@ export default function AdminAdsScreen() {
 
   return (
     <Screen>
+      <FeaturedPicker pros={pros} featuredId={featuredId} onChanged={reload} />
+
       <Text variant="title">מודעות</Text>
       <Text muted>
         המודעות מתחלפות בסטריפ שבתחתית מסך הבית. כשאין מודעה פעילה, מופיעות שם ההודעות של
@@ -122,6 +130,59 @@ export default function AdminAdsScreen() {
         ))
       )}
     </Screen>
+  );
+}
+
+// Chooses the pro featured on the home screen ("מומלצת השבוע"), or none.
+function FeaturedPicker({
+  pros,
+  featuredId,
+  onChanged,
+}: {
+  pros: Pro[];
+  featuredId: string | null;
+  onChanged: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function choose(proId: string | null) {
+    if (busy || proId === featuredId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await setFeaturedPro(proId);
+      onChanged();
+    } catch {
+      setError('הבחירה לא נשמרה. כדאי לנסות שוב.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <View style={styles.card}>
+      <Text variant="heading">מומלצת השבוע</Text>
+      <Text variant="small" muted>
+        בעלת המקצוע שתופיע בפס השחור במסך הבית. התמונה נלקחת מתיק העבודות שלה.
+      </Text>
+      <View style={styles.chips}>
+        <Chip label="בלי" selected={featuredId === null} onPress={() => choose(null)} />
+        {pros.map((p) => (
+          <Chip
+            key={p.user_id}
+            label={p.display_name}
+            selected={featuredId === p.user_id}
+            onPress={() => choose(p.user_id)}
+          />
+        ))}
+      </View>
+      {error ? (
+        <Text variant="small" style={styles.error} accessibilityRole="alert">
+          {error}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 

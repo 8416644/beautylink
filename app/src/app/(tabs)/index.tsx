@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AdsStrip, ADS_STRIP_HEIGHT } from '@/components/ads-strip';
 import { CategoryImage } from '@/components/category-image';
+import { FeaturedProBar } from '@/components/featured-pro-bar';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
@@ -75,6 +76,8 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         </Link>
+
+        <FeaturedProBar />
 
         <Text variant="smallBold" style={styles.sectionTitle}>
           קטגוריות
