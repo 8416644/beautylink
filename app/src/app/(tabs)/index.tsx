@@ -9,13 +9,30 @@ import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
+import { useAuth } from '@/lib/auth';
 import { useCategories } from '@/lib/categories';
 
 const PLACEHOLDER_TILES = 8;
 const IMAGE_SIZE = 52;
 
+// "בוקר טוב" and so on, by the hour in Israel.
+function timeGreeting() {
+  const hour = Number(
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: 'numeric', hourCycle: 'h23' }).format(
+      new Date(),
+    ),
+  );
+  if (hour >= 5 && hour < 12) return 'בוקר טוב';
+  if (hour >= 12 && hour < 17) return 'צהריים טובים';
+  if (hour >= 17 && hour < 22) return 'ערב טוב';
+  return 'לילה טוב';
+}
+
 export default function HomeScreen() {
   const { state, reload } = useCategories();
+  // A signed-in user is greeted by her first name; everyone else gets the general line.
+  const { profile } = useAuth();
+  const firstName = profile?.full_name.trim().split(/\s+/)[0] ?? '';
   // Four cards a row, sized from the grid's measured width: a percentage width can round
   // past the row on some phones and push the fourth card down.
   const [gridWidth, setGridWidth] = useState(0);
@@ -35,9 +52,16 @@ export default function HomeScreen() {
             accessibilityLabel="BeautyLink"
           />
         </View>
-        <Text variant="heading" style={styles.greeting}>
-          מה מתחשק לך היום?
-        </Text>
+        <View>
+          {firstName ? (
+            <Text variant="heading" style={styles.greeting}>
+              {timeGreeting()}, {firstName}
+            </Text>
+          ) : null}
+          <Text variant={firstName ? 'small' : 'heading'} muted={!!firstName} style={styles.greeting}>
+            מה מתחשק לך היום?
+          </Text>
+        </View>
 
         <Link href="/search" asChild>
           <Pressable style={styles.search} accessibilityRole="search" accessibilityLabel="חיפוש">
