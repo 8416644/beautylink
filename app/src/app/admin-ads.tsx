@@ -286,6 +286,7 @@ type FormProps = {
 function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
   const [title, setTitle] = useState(ad?.title ?? '');
   const [subtitle, setSubtitle] = useState(ad?.subtitle ?? '');
+  const [details, setDetails] = useState(ad?.details ?? '');
   const [action, setAction] = useState(ad?.action_label ?? 'לפרטים');
   const [target, setTarget] = useState<Target>(ad?.pro_id ? 'pro' : ad?.category_slug ? 'category' : 'none');
   const [proId, setProId] = useState<string | null>(ad?.pro_id ?? null);
@@ -304,6 +305,7 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
     title.trim() === '' && 'כותרת',
     title.trim().length > 60 && 'כותרת עד 60 תווים',
     subtitle.trim().length > 90 && 'טקסט עד 90 תווים',
+    details.trim().length > 1000 && 'פרטים נוספים עד 1,000 תווים',
     (action.trim() === '' || action.trim().length > 16) && 'טקסט הכפתור (עד 16 תווים)',
     target === 'pro' && proId === null && 'לאיזו בעלת מקצוע',
     target === 'category' && categorySlug === null && 'לאיזו קטגוריה',
@@ -330,6 +332,7 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
         {
           title: title.trim(),
           subtitle: subtitle.trim(),
+          details: details.trim(),
           action_label: action.trim(),
           pro_id: target === 'pro' ? proId : null,
           category_slug: target === 'category' ? categorySlug : null,
@@ -367,6 +370,13 @@ function AdForm({ ad, pros, categories, sort, onDone }: FormProps) {
         value={subtitle}
         onChangeText={setSubtitle}
         hint="למשל: 20% הנחה על לק ג'ל השבוע"
+      />
+      <TextField
+        label="פרטים נוספים (לא חובה)"
+        value={details}
+        onChangeText={setDetails}
+        multiline
+        hint={`מה כלול, מה לא כלול ותנאים. מופיע במסך המבצע, בכפתור "פרטים נוספים". ${details.trim().length}/1000`}
       />
 
       <View style={styles.section}>

@@ -9,6 +9,8 @@ export type Ad = {
   id: string;
   title: string;
   subtitle: string;
+  // Longer text for the promotion's own screen ("more details"); '' when there is none.
+  details: string;
   image_url: string | null;
   pro_id: string | null;
   category_slug: string | null;
@@ -22,7 +24,7 @@ export type Ad = {
 export type AdInput = Omit<Ad, 'id' | 'sort' | 'image_url'>;
 
 const COLUMNS =
-  'id, title, subtitle, image_url, pro_id, category_slug, action_label, starts_on, ends_on, is_active, sort';
+  'id, title, subtitle, details, image_url, pro_id, category_slug, action_label, starts_on, ends_on, is_active, sort';
 const BUCKET = 'ads';
 
 // The ads showing today. The database only returns those to anyone but an admin; an admin
@@ -42,6 +44,11 @@ export async function fetchShowingAds(): Promise<Ad[]> {
 // The ads showing today that lead to this pro: her promotions, shown on her page.
 export async function fetchProPromotions(proId: string): Promise<Ad[]> {
   return (await fetchShowingAds()).filter((ad) => ad.pro_id === proId);
+}
+
+// One showing ad, for its details screen; null when it is not showing (or gone).
+export async function fetchAd(id: string): Promise<Ad | null> {
+  return (await fetchShowingAds()).find((ad) => ad.id === id) ?? null;
 }
 
 // Every ad, for the admin.

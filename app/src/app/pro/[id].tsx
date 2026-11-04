@@ -199,6 +199,16 @@ function ProPage({ pro, priceList, photos, hours, promotions, reviews }: ProPage
               בתוקף עד {formatAdDay(promo.ends_on)}
             </Text>
           ) : null}
+          {promo.details ? (
+            <Pressable
+              style={({ pressed }) => [styles.promoMore, pressed && styles.promoMorePressed]}
+              onPress={() => router.push({ pathname: '/promo/[id]', params: { id: promo.id } })}
+              accessibilityRole="link">
+              <Text variant="smallBold" style={styles.promoMoreText}>
+                פרטים נוספים ›
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       ))}
 
@@ -554,6 +564,20 @@ const styles = StyleSheet.create({
   },
   promoMuted: {
     color: Colors.onInkMuted,
+  },
+  promoMore: {
+    alignSelf: 'flex-start',
+    marginTop: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.inkAccent,
+  },
+  promoMorePressed: {
+    opacity: 0.8,
+  },
+  promoMoreText: {
+    color: Colors.ink,
   },
   header: {
     flexDirection: 'row',

@@ -58,7 +58,10 @@ function toStripItem(ad: Ad): StripItem {
     subtitle: ad.subtitle,
     image: ad.image_url ? { uri: ad.image_url } : LOGO,
     action: ad.action_label,
-    href: ad.pro_id
+    // A pro's promotion with more details opens its own screen; otherwise her page.
+    href: ad.pro_id && ad.details
+      ? { pathname: '/promo/[id]', params: { id: ad.id } }
+      : ad.pro_id
       ? { pathname: '/pro/[id]', params: { id: ad.pro_id } }
       : ad.category_slug
         ? { pathname: '/search', params: { category: ad.category_slug } }

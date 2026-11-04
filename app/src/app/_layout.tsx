@@ -71,6 +71,7 @@ export default function RootLayout() {
         <Stack.Screen name="admin-stats" options={{ headerShown: true, title: 'ניהול' }} />
         <Stack.Screen name="delete-account" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="my-favorites" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="promo/[id]" options={{ headerShown: true, title: '' }} />
       </Stack>
     </AuthProvider>
   );
