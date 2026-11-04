@@ -46,6 +46,8 @@ export default function ProfileScreen() {
         {session.user.email}
       </Text>
 
+      <Button label="המועדפות שלי" onPress={() => router.push('/my-favorites')} />
+
       <View style={styles.card}>
         <Text variant="heading">בעלת מקצוע?</Text>
         {proState.status === 'loading' ? (

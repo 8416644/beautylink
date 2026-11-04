@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { PhotoViewer } from '@/components/photo-viewer';
 import { WazeButton } from '@/components/waze-button';
+import { FavoriteButton } from '@/components/favorite-button';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -126,6 +127,11 @@ function ProPage({ pro, priceList, photos, hours, promotions, reviews }: ProPage
             <Image source={{ uri: cover.media_url }} style={styles.cover} contentFit="cover" />
           </Pressable>
         ) : null}
+        {cover ? (
+          <View style={styles.heartOnCover}>
+            <FavoriteButton proId={pro.user_id} proName={pro.display_name} onPhoto />
+          </View>
+        ) : null}
         <View style={[styles.headerCard, cover && styles.headerCardOverCover]}>
           <View style={styles.header}>
             <Text variant="title" style={styles.name}>
@@ -145,6 +151,11 @@ function ProPage({ pro, priceList, photos, hours, promotions, reviews }: ProPage
                 </Text>
               </View>
             )}
+            {!cover ? (
+              <View style={styles.heartInHeader}>
+                <FavoriteButton proId={pro.user_id} proName={pro.display_name} />
+              </View>
+            ) : null}
           </View>
           <Text variant="small" muted>
             {place}
@@ -558,6 +569,15 @@ const styles = StyleSheet.create({
     height: 220,
     borderRadius: Radius.medium,
     backgroundColor: Colors.placeholder,
+  },
+  // Top corner of the cover, away from the name (the left side in Hebrew).
+  heartOnCover: {
+    position: 'absolute',
+    top: Spacing.three,
+    end: Spacing.three,
+  },
+  heartInHeader: {
+    marginStart: 'auto',
   },
   headerCard: {
     gap: Spacing.two,

@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { CategoryImage } from '@/components/category-image';
+import { FavoriteButton } from '@/components/favorite-button';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
@@ -113,6 +114,7 @@ function ProCard({ pro }: { pro: ProSummary }) {
             </Text>
           </View>
         )}
+        <FavoriteButton proId={pro.user_id} proName={pro.display_name} />
       </View>
       <Text variant="small" muted>
         {place}
