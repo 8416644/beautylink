@@ -76,6 +76,8 @@ type ProPageProps = {
 
 function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
   const [viewing, setViewing] = useState<PortfolioItem | null>(null);
+  // Her works first when she has photos, otherwise her price list.
+  const [tab, setTab] = useState<TabKey>(photos.length > 0 ? 'works' : 'prices');
   // Her profile photo across the top; until she adds one, her newest portfolio photo.
   const cover: PortfolioItem | null = pro.cover_url
     ? { id: 'cover', media_url: pro.cover_url, caption: pro.display_name, sort: 0 }
@@ -165,20 +167,25 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
         <Button label="קביעת תור" onPress={() => router.push(`/book/${pro.user_id}`)} />
       )}
 
-      {pro.bio ? (
-        <View style={styles.card}>
-          <Text>{pro.bio}</Text>
-        </View>
-      ) : null}
+      <View style={styles.tabs} accessibilityRole="tablist">
+        {TABS.map((t) => (
+          <Pressable
+            key={t.key}
+            style={[styles.tab, tab === t.key && styles.tabActive]}
+            onPress={() => setTab(t.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === t.key }}>
+            <Text variant="smallBold" style={[styles.tabText, tab === t.key && styles.tabTextActive]}>
+              {t.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
-      {pro.travels_to_client && travelFee > 0 ? (
-        <Text variant="small" muted>
-          תוספת הגעה אלייך: {travelFee} ₪
-        </Text>
-      ) : null}
-
-      {photos.length > 0 && (
-        <Section title="תיק עבודות">
+      {tab === 'works' &&
+        (photos.length === 0 ? (
+          <Empty text="עדיין אין תמונות בתיק העבודות." />
+        ) : (
           <View style={styles.gallery}>
             {photos.map((photo) => (
               <Pressable
@@ -191,16 +198,12 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
               </Pressable>
             ))}
           </View>
-          <PhotoViewer
-            uri={viewing?.media_url ?? null}
-            caption={viewing?.caption}
-            onClose={() => setViewing(null)}
-          />
-        </Section>
-      )}
+        ))}
 
-      {priceList.length > 0 && (
-        <Section title="מחירון">
+      {tab === 'prices' &&
+        (priceList.length === 0 ? (
+          <Empty text="עדיין אין מחירון." />
+        ) : (
           <View style={styles.card}>
             {priceList.map((service, i) => (
               <Pressable
@@ -225,11 +228,12 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
               </Pressable>
             ))}
           </View>
-        </Section>
-      )}
+        ))}
 
-      {hours.length > 0 && (
-        <Section title="שעות פעילות">
+      {tab === 'hours' &&
+        (hours.length === 0 ? (
+          <Empty text="עדיין לא הוגדרו שעות פעילות." />
+        ) : (
           <View style={styles.card}>
             {WEEKDAYS.map((day, weekday) => {
               const today = hours.filter((s) => s.weekday === weekday);
@@ -245,10 +249,24 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
               );
             })}
           </View>
-        </Section>
+        ))}
+
+      {tab === 'about' && (
+        <>
+          {pro.bio ? (
+            <View style={styles.card}>
+              <Text>{pro.bio}</Text>
+            </View>
+          ) : null}
+          {pro.travels_to_client && travelFee > 0 ? (
+            <Text variant="small" muted>
+              תוספת הגעה אלייך: {travelFee} ₪
+            </Text>
+          ) : null}
+        </>
       )}
 
-      {pro.services.length > 0 && (
+      {tab === 'about' && pro.services.length > 0 && (
         <Section title="תחומי טיפול">
           {pro.services.map((group) => (
             <View key={group.category} style={styles.group}>
@@ -263,7 +281,7 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
         </Section>
       )}
 
-      {links.length > 0 && (
+      {tab === 'about' && links.length > 0 && (
         <Section title="ברשתות">
           <View style={styles.tags}>
             {links.map((link) => (
@@ -281,15 +299,33 @@ function ProPage({ pro, priceList, photos, hours, promotions }: ProPageProps) {
         </Section>
       )}
 
-      <View style={[styles.card, styles.soon]}>
-        <Text variant="smallBold">בקרוב</Text>
-        <Text variant="small" muted>
-          ביקורות של לקוחות.
-        </Text>
-      </View>
+      {tab === 'about' && !pro.bio && pro.services.length === 0 && links.length === 0 && (
+        <Empty text="עדיין אין פרטים נוספים." />
+      )}
+
+      {/* Shared by the cover and the portfolio grid. */}
+      <PhotoViewer uri={viewing?.media_url ?? null} caption={viewing?.caption} onClose={() => setViewing(null)} />
     </Screen>
   );
 }
+
+function Empty({ text }: { text: string }) {
+  return (
+    <View style={styles.card}>
+      <Text muted>{text}</Text>
+    </View>
+  );
+}
+
+type TabKey = 'works' | 'prices' | 'hours' | 'about';
+
+// The parts of her page, one at a time.
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'works', label: 'עבודות' },
+  { key: 'prices', label: 'מחירון' },
+  { key: 'hours', label: 'שעות' },
+  { key: 'about', label: 'אודות' },
+];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -311,6 +347,29 @@ function Tag({ label }: { label: string }) {
 }
 
 const styles = StyleSheet.create({
+  tabs: {
+    flexDirection: 'row',
+    padding: Spacing.one,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+  },
+  tabActive: {
+    backgroundColor: Colors.ink,
+  },
+  tabText: {
+    textAlign: 'center',
+    color: Colors.textSecondary,
+  },
+  tabTextActive: {
+    color: Colors.onInk,
+  },
   // Her running promotions, in ink so they stand out from the rest of the page.
   promo: {
     gap: Spacing.one,
