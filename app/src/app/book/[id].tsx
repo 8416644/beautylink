@@ -13,6 +13,7 @@ import {
   bookAppointment,
   cancellationPolicy,
   errorText,
+  fetchBusyTimes,
   fetchFreeSlots,
   type Slot,
 } from '@/lib/appointments';
@@ -118,9 +119,13 @@ function Booking({ pro, services, initialServiceId }: BookingProps) {
   const days = daysOfMonth(month).filter((d) => d >= from);
 
   const { state: slotsState, reload: reloadSlots } = useAsync(`${serviceId}:${month}`, () =>
-    fetchFreeSlots(serviceId, days[0], days.length),
+    Promise.all([
+      fetchFreeSlots(serviceId, days[0], days.length),
+      fetchBusyTimes(serviceId, days[0], days.length),
+    ]),
   );
-  const slots = slotsState.status === 'ready' ? slotsState.data : {};
+  const slots = slotsState.status === 'ready' ? slotsState.data[0] : {};
+  const busyTimes = slotsState.status === 'ready' ? slotsState.data[1] : {};
   const hasSlots = (day: string) => (slots[day]?.length ?? 0) > 0;
   // Until she picks a day, show the first one this month with free times.
   const day = chosenDay && hasSlots(chosenDay) ? chosenDay : (days.find(hasSlots) ?? null);
@@ -268,18 +273,46 @@ function Booking({ pro, services, initialServiceId }: BookingProps) {
           <>
             <Text variant="smallBold">{dayLabel(day)}</Text>
             <View style={styles.chips}>
-              {slots[day].map((s) => (
-                <Chip
-                  key={s.at}
-                  label={ltr(s.time)}
-                  selected={slot?.at === s.at}
-                  onPress={() => {
-                    setSlot(s);
-                    setError(null);
-                  }}
-                />
-              ))}
+              {[
+                ...slots[day].map((s) => ({ ...s, taken: false })),
+                ...(busyTimes[day] ?? []).map((s) => ({ ...s, taken: true })),
+              ]
+                .sort((x, y) => x.at.localeCompare(y.at))
+                .map((s) =>
+                  s.taken ? (
+                    // Black with white text: someone already booked this time.
+                    <View
+                      key={`taken-${s.at}`}
+                      style={styles.taken}
+                      accessible
+                      accessibilityLabel={`${s.time}, תפוס`}>
+                      <Text variant="small" style={styles.takenText}>
+                        {ltr(s.time)}
+                      </Text>
+                    </View>
+                  ) : (
+                    // A chosen time turns rose, so it never looks like a taken (black) one.
+                    <Pressable
+                      key={s.at}
+                      style={[styles.free, slot?.at === s.at && styles.freeSelected]}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: slot?.at === s.at }}
+                      onPress={() => {
+                        setSlot({ at: s.at, time: s.time });
+                        setError(null);
+                      }}>
+                      <Text variant="small" style={slot?.at === s.at && styles.freeSelectedText}>
+                        {ltr(s.time)}
+                      </Text>
+                    </Pressable>
+                  ),
+                )}
             </View>
+            {(busyTimes[day]?.length ?? 0) > 0 ? (
+              <Text variant="caption" muted>
+                שעות בשחור כבר תפוסות.
+              </Text>
+            ) : null}
           </>
         )}
       </Section>
@@ -347,6 +380,32 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 const styles = StyleSheet.create({
+  free: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  freeSelected: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  freeSelectedText: {
+    color: Colors.surface,
+  },
+  taken: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.ink,
+    backgroundColor: Colors.ink,
+  },
+  takenText: {
+    color: Colors.onInk,
+  },
   titleBlock: {
     gap: Spacing.one,
   },

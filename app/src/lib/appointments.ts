@@ -71,6 +71,27 @@ export async function fetchFreeSlots(serviceId: string, from: string, days: numb
   return byDay;
 }
 
+// The pro's taken start times on these days, grouped by Israel day like fetchFreeSlots.
+// Only times are returned, never who booked or what. An older database without busy_times
+// just shows no taken times.
+export async function fetchBusyTimes(serviceId: string, from: string, days: number) {
+  const byDay: Record<string, Slot[]> = {};
+  try {
+    const rows = await rpc<{ starts_at: string }[]>('busy_times', {
+      p_service: serviceId,
+      p_from: from,
+      p_days: days,
+    });
+    for (const row of rows) {
+      const { day, time } = inIsrael(row.starts_at);
+      (byDay[day] ??= []).push({ at: row.starts_at, time });
+    }
+  } catch {
+    // Taken times are a help, not something to block booking over.
+  }
+  return byDay;
+}
+
 export function bookAppointment(input: {
   serviceId: string;
   at: string;
