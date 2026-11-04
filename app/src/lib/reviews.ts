@@ -30,6 +30,27 @@ export async function fetchProReviews(proId: string): Promise<Review[]> {
   }));
 }
 
+// The reviews written about her, for the pro herself, including any the admin hid.
+export async function fetchReviewsAboutMe(proId: string): Promise<(Review & { is_hidden: boolean })[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('id, rating, body, pro_reply, created_at, is_hidden, profiles!reviews_client_user_id_fkey(full_name)')
+    .eq('pro_id', proId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  type Row = Omit<Review, 'client_name'> & { is_hidden: boolean; profiles: { full_name: string } | null };
+  return (data as unknown as Row[]).map(({ profiles, ...review }) => ({
+    ...review,
+    client_name: profiles?.full_name.trim().split(/\s+/)[0] || 'לקוחה',
+  }));
+}
+
+// Her reply under a review about her; an empty reply removes it (see reply_to_review).
+export async function replyToReview(reviewId: string, reply: string) {
+  const { error } = await supabase.rpc('reply_to_review', { p_review: reviewId, p_reply: reply });
+  if (error) throw error;
+}
+
 // The appointments she has already reviewed.
 export async function fetchMyReviewedAppointmentIds(userId: string): Promise<Set<string>> {
   const { data, error } = await supabase.from('reviews').select('appointment_id').eq('client_user_id', userId);

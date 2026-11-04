@@ -57,6 +57,7 @@ export default function RootLayout() {
         <Stack.Screen name="my-services" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="my-portfolio" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="my-hours" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="my-reviews" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="book/[id]" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="review/[id]" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="my-calendar" options={{ headerShown: true, title: '' }} />
