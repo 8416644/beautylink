@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -16,6 +17,12 @@ export default function HomeScreen() {
 
   return (
     <Screen>
+      <Image
+        source={require('@/assets/images/logo.png')}
+        style={styles.logo}
+        contentFit="contain"
+        accessibilityLabel="BeautyLink"
+      />
       <Text variant="title">מה מתחשק לך היום?</Text>
 
       <Link href="/search" asChild>
@@ -73,6 +80,13 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  // The logo file is 300 by 211.
+  logo: {
+    width: 150,
+    height: 106,
+    alignSelf: 'center',
+    borderRadius: Radius.medium,
+  },
   search: {
     flexDirection: 'row',
     alignItems: 'center',

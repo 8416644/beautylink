@@ -4,21 +4,19 @@ import { StyleSheet, View } from 'react-native';
 import { CategoryIcon } from '@/components/category-icon';
 import { Colors } from '@/constants/theme';
 
-// Illustrations from the original BeautyLink design, keyed by the category's icon
-// (categories.icon in the database).
+// The BeautyLink category pictures, keyed by the category's icon (categories.icon in the
+// database). The app is for religious women, so every picture here must be modest.
 const IMAGES: Record<string, number> = {
-  hair: require('@/assets/images/categories/hair.png'),
-  makeup: require('@/assets/images/categories/makeup.png'),
-  'brows-lashes': require('@/assets/images/categories/brows-lashes.png'),
+  nails: require('@/assets/images/categories/nails.jpg'),
+  'brows-lashes': require('@/assets/images/categories/brows-lashes.jpg'),
+  makeup: require('@/assets/images/categories/makeup.jpg'),
+  hair: require('@/assets/images/categories/hair.jpg'),
   laser: require('@/assets/images/categories/laser.png'),
-  massage: require('@/assets/images/categories/massage.png'),
-  nails: require('@/assets/images/categories/nails.png'),
+  wigs: require('@/assets/images/categories/wigs.jpg'),
+  facials: require('@/assets/images/categories/facials.jpg'),
+  massage: require('@/assets/images/categories/massage.jpg'),
   tanning: require('@/assets/images/categories/tanning.png'),
   'permanent-makeup': require('@/assets/images/categories/permanent-makeup.png'),
-  facials: require('@/assets/images/categories/facials.png'),
-  wigs: require('@/assets/images/categories/wigs.webp'),
-  brows: require('@/assets/images/categories/brows.png'),
-  lashes: require('@/assets/images/categories/lashes.png'),
 };
 
 type CategoryImageProps = {
