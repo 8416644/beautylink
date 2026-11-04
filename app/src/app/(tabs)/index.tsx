@@ -2,48 +2,52 @@ import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AdsStrip, ADS_STRIP_HEIGHT } from '@/components/ads-strip';
 import { CategoryImage } from '@/components/category-image';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useCategories } from '@/lib/categories';
 
-const PLACEHOLDER_TILES = 6;
-const IMAGE_SIZE = 96;
+const PLACEHOLDER_TILES = 8;
+const IMAGE_SIZE = 52;
 
 export default function HomeScreen() {
   const { state, reload } = useCategories();
 
   return (
-    <Screen>
-      <View style={styles.logoCircle}>
-        <Image
-          source={require('@/assets/images/logo.png')}
-          style={styles.logo}
-          contentFit="contain"
-          accessibilityLabel="BeautyLink"
-        />
-      </View>
-      <Text variant="title" style={styles.greeting}>
-        מה מתחשק לך היום?
-      </Text>
-
-      <Link href="/search" asChild>
-        <Pressable style={styles.search} accessibilityRole="search" accessibilityLabel="חיפוש">
-          <Icon
-            name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
-            color={Colors.textSecondary}
-            size={20}
+    <Screen footer={<AdsStrip />} footerHeight={ADS_STRIP_HEIGHT}>
+      {/* Compact, so all the categories fit above the ads strip on a phone. */}
+      <View style={styles.content}>
+        <View style={styles.logoCircle}>
+          <Image
+            source={require('@/assets/images/logo.png')}
+            style={styles.logo}
+            contentFit="contain"
+            accessibilityLabel="BeautyLink"
           />
-          <Text muted style={styles.searchText}>
-            חיפוש בעלת מקצוע או שירות
-          </Text>
-        </Pressable>
-      </Link>
+        </View>
+        <Text variant="heading" style={styles.greeting}>
+          מה מתחשק לך היום?
+        </Text>
 
-      <View style={styles.section}>
-        <Text variant="heading">קטגוריות</Text>
+        <Link href="/search" asChild>
+          <Pressable style={styles.search} accessibilityRole="search" accessibilityLabel="חיפוש">
+            <Icon
+              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+              color={Colors.textSecondary}
+              size={20}
+            />
+            <Text muted style={styles.searchText}>
+              חיפוש בעלת מקצוע או שירות
+            </Text>
+          </Pressable>
+        </Link>
+
+        <Text variant="smallBold" style={styles.sectionTitle}>
+          קטגוריות
+        </Text>
         {state.status === 'error' ? (
           <View style={styles.error}>
             <Text muted>לא הצלחנו לטעון את הקטגוריות. כדאי לבדוק את החיבור לאינטרנט.</Text>
@@ -70,7 +74,7 @@ export default function HomeScreen() {
                     {/* A plain style: Link's asChild drops a style function on the web. */}
                     <Pressable style={styles.category} accessibilityRole="link">
                       <CategoryImage icon={category.icon ?? category.slug} size={IMAGE_SIZE} />
-                      <Text variant="heading" style={styles.categoryName}>
+                      <Text variant="caption" style={styles.categoryName}>
                         {category.name}
                       </Text>
                     </Pressable>
@@ -84,11 +88,14 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  content: {
+    gap: Spacing.three,
+  },
   // A circle in the logo's own background pink, so the rectangular file blends into it.
   logoCircle: {
-    width: 148,
-    height: 148,
-    borderRadius: 74,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
@@ -99,8 +106,8 @@ const styles = StyleSheet.create({
   // The logo file is trimmed to its drawing (206 by 179). This is the largest size whose
   // corners still fit inside the circle.
   logo: {
-    width: 110,
-    height: 96,
+    width: 78,
+    height: 68,
   },
   greeting: {
     textAlign: 'center',
@@ -109,7 +116,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    height: 48,
+    height: 46,
     paddingHorizontal: Spacing.four,
     borderRadius: Radius.pill,
     backgroundColor: Colors.surface,
@@ -119,22 +126,23 @@ const styles = StyleSheet.create({
   searchText: {
     flex: 1,
   },
-  section: {
-    gap: Spacing.three,
+  sectionTitle: {
+    marginTop: Spacing.two,
   },
-  // Two cards a row, as in the original BeautyLink design.
+  // Four cards a row; a last row that is not full sits in the middle.
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: Spacing.three,
+    justifyContent: 'center',
+    gap: Spacing.two,
   },
   category: {
-    width: '48%',
+    width: '23%',
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingVertical: Spacing.five,
-    paddingHorizontal: Spacing.three,
+    gap: Spacing.one,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.two,
+    paddingHorizontal: Spacing.one,
     borderRadius: Radius.medium,
     backgroundColor: Colors.surface,
     borderWidth: 1,
@@ -147,13 +155,14 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     textAlign: 'center',
+    fontFamily: Fonts.medium,
   },
   placeholder: {
     backgroundColor: Colors.placeholder,
   },
   placeholderName: {
-    width: 48,
-    height: 12,
+    width: 40,
+    height: 10,
     borderRadius: Radius.pill,
     backgroundColor: Colors.placeholder,
   },
