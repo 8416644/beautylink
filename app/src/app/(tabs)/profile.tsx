@@ -126,11 +126,26 @@ export default function ProfileScreen() {
         onPress={() => router.push('/set-password')}
       />
       <Button label="התנתקות" variant="secondary" onPress={signOut} />
+      {profile?.role !== 'admin' && (
+        <Text
+          variant="small"
+          style={styles.deleteLink}
+          accessibilityRole="link"
+          onPress={() => router.push('/delete-account')}>
+          מחיקת החשבון
+        </Text>
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  deleteLink: {
+    alignSelf: 'center',
+    paddingVertical: Spacing.two,
+    color: Colors.textSecondary,
+    textDecorationLine: 'underline',
+  },
   card: {
     gap: Spacing.three,
     padding: Spacing.four,
