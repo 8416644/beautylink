@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { GoogleLogo } from '@/components/google-logo';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
@@ -248,7 +249,7 @@ export default function SignInScreen() {
         disabled={googleBusy}
         accessibilityRole="button"
         accessibilityLabel="המשך עם Google">
-        <Text style={styles.googleG}>G</Text>
+        <GoogleLogo size={20} />
         <Text variant="smallBold">{googleBusy ? 'מתחברים…' : 'המשך עם Google'}</Text>
       </Pressable>
     </Screen>
@@ -279,12 +280,6 @@ const styles = StyleSheet.create({
   },
   googlePressed: {
     borderColor: Colors.accent,
-  },
-  googleG: {
-    fontSize: 20,
-    lineHeight: 24,
-    fontWeight: '700',
-    color: '#4285F4',
   },
   tabs: {
     flexDirection: 'row',
