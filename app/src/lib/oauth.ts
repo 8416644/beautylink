@@ -1,3 +1,4 @@
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
@@ -45,10 +46,42 @@ export async function sessionFromUrl(url: string) {
   return true;
 }
 
-// Signs in with Google. On a phone it opens Google in an in-app browser and resolves once
-// the user is back, signed in (true) or having closed it (false). On the web the whole page
-// goes to Google and comes back to /auth-callback, so this never resolves there.
+// The Google sign-in sheet built into Android (and iOS), available in the real app but not
+// in Expo Go, whose native modules are fixed. Loaded lazily so Expo Go never touches it.
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const canSignInNatively =
+  Platform.OS !== 'web' &&
+  Constants.executionEnvironment !== ExecutionEnvironment.StoreClient &&
+  !!WEB_CLIENT_ID;
+
+async function signInWithGoogleNatively(): Promise<boolean> {
+  const { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } = await import(
+    '@react-native-google-signin/google-signin'
+  );
+  // Google issues the ID token for the web client, which is the one Supabase checks.
+  GoogleSignin.configure({ webClientId: WEB_CLIENT_ID });
+  try {
+    await GoogleSignin.hasPlayServices();
+    const response = await GoogleSignin.signIn();
+    if (!isSuccessResponse(response)) return false;
+    const token = response.data.idToken;
+    if (!token) throw new Error('Google returned no ID token');
+    const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token });
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    if (isErrorWithCode(e) && e.code === statusCodes.SIGN_IN_CANCELLED) return false;
+    throw e;
+  }
+}
+
+// Signs in with Google. In the real app on a phone it uses the phone's own Google account
+// sheet. Elsewhere it goes through Google's web page: on a phone (Expo Go) in an in-app
+// browser, resolving once the user is back, signed in (true) or having closed it (false);
+// on the web the whole page goes to Google and comes back to /auth-callback, so this never
+// resolves there.
 export async function signInWithGoogle(): Promise<boolean> {
+  if (canSignInNatively) return signInWithGoogleNatively();
   const redirectTo = oauthRedirect();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

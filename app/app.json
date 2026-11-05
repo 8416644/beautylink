@@ -53,7 +53,8 @@
         "expo-image-picker",
         {
           "photosPermission": "BeautyLink צריכה גישה לתמונות כדי שתוכלי להוסיף עבודות לתיק העבודות שלך.",
-          "cameraPermission": "BeautyLink צריכה גישה למצלמה כדי שתוכלי לצלם עבודות לתיק העבודות שלך."
+          "cameraPermission": "BeautyLink צריכה גישה למצלמה כדי שתוכלי לצלם עבודות לתיק העבודות שלך.",
+          "microphonePermission": false
         }
       ],
       "expo-image",
@@ -68,6 +69,12 @@
       "eas": {
         "projectId": "5137f4a4-4541-4a4d-a834-e8f21b0c2c68"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5137f4a4-4541-4a4d-a834-e8f21b0c2c68"
     }
   }
 }
