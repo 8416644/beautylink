@@ -8,6 +8,7 @@ import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { authErrorMessage as errorMessage } from '@/lib/auth-errors';
+import { signInWithGoogle } from '@/lib/oauth';
 import { supabase } from '@/lib/supabase';
 
 type Mode = 'sign-in' | 'sign-up';
@@ -27,6 +28,7 @@ export default function SignInScreen() {
   const [sentConfirmation, setSentConfirmation] = useState(false);
   const [forgot, setForgot] = useState(false);
   const [sentReset, setSentReset] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   const signUp = mode === 'sign-up';
   const canSubmit = email.trim() !== '' && password !== '' && (!signUp || fullName.trim() !== '');
@@ -55,6 +57,18 @@ export default function SignInScreen() {
       setBusy(false);
       if (error) return setError(errorMessage(error.message));
       leave();
+    }
+  }
+
+  async function google() {
+    setGoogleBusy(true);
+    setError(null);
+    try {
+      if (await signInWithGoogle()) leave();
+    } catch {
+      setError('ההתחברות עם Google לא הצליחה. כדאי לנסות שוב.');
+    } finally {
+      setGoogleBusy(false);
     }
   }
 
@@ -221,14 +235,57 @@ export default function SignInScreen() {
         )}
       </View>
 
-      <Text variant="caption" muted>
-        התחברות עם Google ו-Apple תתווסף בהמשך.
-      </Text>
+      <View style={styles.orRow}>
+        <View style={styles.orLine} />
+        <Text variant="caption" muted>
+          או
+        </Text>
+        <View style={styles.orLine} />
+      </View>
+      <Pressable
+        style={({ pressed }) => [styles.google, pressed && styles.googlePressed]}
+        onPress={google}
+        disabled={googleBusy}
+        accessibilityRole="button"
+        accessibilityLabel="המשך עם Google">
+        <Text style={styles.googleG}>G</Text>
+        <Text variant="smallBold">{googleBusy ? 'מתחברים…' : 'המשך עם Google'}</Text>
+      </Pressable>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  google: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.three,
+    minHeight: 52,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  googlePressed: {
+    borderColor: Colors.accent,
+  },
+  googleG: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '700',
+    color: '#4285F4',
+  },
   tabs: {
     flexDirection: 'row',
     padding: Spacing.one,
