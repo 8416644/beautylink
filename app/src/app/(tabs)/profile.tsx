@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
@@ -42,10 +42,21 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <Text variant="title">שלום{name ? `, ${name}` : ''}</Text>
-      <Text variant="small" muted>
-        {session.user.email}
-      </Text>
+      <View style={styles.headerRow}>
+        <View style={styles.grow}>
+          <Text variant="title">שלום{name ? `, ${name}` : ''}</Text>
+          <Text variant="small" muted>
+            {session.user.email}
+          </Text>
+        </View>
+        {/* Also at the bottom; here so it is found without scrolling a long profile. */}
+        <Pressable
+          style={({ pressed }) => [styles.signOutTop, pressed && styles.signOutTopPressed]}
+          onPress={signOut}
+          accessibilityRole="button">
+          <Text variant="smallBold">התנתקות</Text>
+        </Pressable>
+      </View>
 
       <Button label="המועדפות שלי" onPress={() => router.push('/my-favorites')} />
 
@@ -161,6 +172,25 @@ function LegalLinks() {
 }
 
 const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.three,
+  },
+  grow: {
+    flex: 1,
+  },
+  signOutTop: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  signOutTopPressed: {
+    borderColor: Colors.accent,
+  },
   legal: {
     flexDirection: 'row',
     justifyContent: 'center',
