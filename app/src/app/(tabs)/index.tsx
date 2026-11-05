@@ -45,14 +45,12 @@ export default function HomeScreen() {
     <Screen footer={<AdsStrip />} footerHeight={ADS_STRIP_HEIGHT}>
       {/* Compact, so all the categories fit above the ads strip on a phone. */}
       <View style={styles.content}>
-        <View style={styles.logoCircle}>
-          <Image
-            source={require('@/assets/images/logo.png')}
-            style={styles.logo}
-            contentFit="contain"
-            accessibilityLabel="BeautyLink"
-          />
-        </View>
+        <Image
+          source={require('@/assets/images/logo.png')}
+          style={styles.logo}
+          contentFit="contain"
+          accessibilityLabel="BeautyLink"
+        />
         <View>
           {firstName ? (
             <Text variant="heading" style={styles.greeting}>
@@ -125,23 +123,11 @@ const styles = StyleSheet.create({
   content: {
     gap: Spacing.three,
   },
-  // A circle in the logo's own background pink, so the rectangular file blends into it.
-  logoCircle: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    alignSelf: 'center',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFE6FE',
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  // The logo file is trimmed to its drawing (206 by 179). This is the largest size whose
-  // corners still fit inside the circle.
+  // The round BeautyLink badge, already circular on a transparent background.
   logo: {
-    width: 78,
-    height: 68,
+    width: 120,
+    height: 120,
+    alignSelf: 'center',
   },
   greeting: {
     textAlign: 'center',

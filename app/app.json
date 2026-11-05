@@ -55,7 +55,9 @@
           "photosPermission": "BeautyLink צריכה גישה לתמונות כדי שתוכלי להוסיף עבודות לתיק העבודות שלך.",
           "cameraPermission": "BeautyLink צריכה גישה למצלמה כדי שתוכלי לצלם עבודות לתיק העבודות שלך."
         }
-      ]
+      ],
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
