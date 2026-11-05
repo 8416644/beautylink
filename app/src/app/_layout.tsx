@@ -74,6 +74,8 @@ export default function RootLayout() {
         <Stack.Screen name="my-favorites" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="promo/[id]" options={{ headerShown: true, title: '' }} />
         <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ headerShown: true, title: '' }} />
+        <Stack.Screen name="terms" options={{ headerShown: true, title: '' }} />
       </Stack>
     </AuthProvider>
   );

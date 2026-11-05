@@ -32,6 +32,7 @@ export default function ProfileScreen() {
           <Text>מתחברים כדי לקבוע תורים, לשמור מועדפות ולהצטרף כבעלת מקצוע.</Text>
         </View>
         <Button label="התחברות או הרשמה" onPress={() => router.push('/sign-in')} />
+        <LegalLinks />
       </Screen>
     );
   }
@@ -138,11 +139,37 @@ export default function ProfileScreen() {
           מחיקת החשבון
         </Text>
       )}
+      <LegalLinks />
     </Screen>
   );
 }
 
+function LegalLinks() {
+  return (
+    <View style={styles.legal}>
+      <Text variant="caption" style={styles.legalLink} accessibilityRole="link" onPress={() => router.push('/terms')}>
+        תנאי שימוש
+      </Text>
+      <Text variant="caption" muted>
+        ·
+      </Text>
+      <Text variant="caption" style={styles.legalLink} accessibilityRole="link" onPress={() => router.push('/privacy')}>
+        מדיניות פרטיות
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  legal: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.two,
+  },
+  legalLink: {
+    color: Colors.textSecondary,
+    textDecorationLine: 'underline',
+  },
   deleteLink: {
     alignSelf: 'center',
     paddingVertical: Spacing.two,

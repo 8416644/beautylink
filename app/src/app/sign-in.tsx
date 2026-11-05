@@ -236,6 +236,18 @@ export default function SignInScreen() {
         )}
       </View>
 
+      <Text variant="caption" muted style={styles.consent}>
+        בהרשמה או בכניסה את מסכימה ל
+        <Text variant="caption" style={styles.link} onPress={() => router.push('/terms')} accessibilityRole="link">
+          תנאי השימוש
+        </Text>
+        {' ול'}
+        <Text variant="caption" style={styles.link} onPress={() => router.push('/privacy')} accessibilityRole="link">
+          מדיניות הפרטיות
+        </Text>
+        .
+      </Text>
+
       <View style={styles.orRow}>
         <View style={styles.orLine} />
         <Text variant="caption" muted>
@@ -257,6 +269,9 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
+  consent: {
+    textAlign: 'center',
+  },
   orRow: {
     flexDirection: 'row',
     alignItems: 'center',
