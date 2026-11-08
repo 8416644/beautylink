@@ -7,6 +7,7 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/lib/auth';
+import { useRefreshGeneration } from '@/lib/refresh';
 import { fetchAdminStats, STATS_PERIODS, type AdminStats, type StatsPeriod } from '@/lib/stats';
 
 // Refreshes on its own, so "online now" stays current while the screen is open.
@@ -52,6 +53,7 @@ export default function AdminStatsScreen() {
   const [period, setPeriod] = useState<StatsPeriod>('week');
   const [result, setResult] = useState<Result | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const generation = useRefreshGeneration();
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -72,7 +74,7 @@ export default function AdminStatsScreen() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [isAdmin, period, attempt]);
+  }, [isAdmin, period, attempt, generation]);
 
   if (loading || (session !== null && profile === null)) {
     return (

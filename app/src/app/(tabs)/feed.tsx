@@ -12,6 +12,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { fetchShowingAds, type Ad } from '@/lib/ads';
 import { useCategories } from '@/lib/categories';
 import { FEED_PAGE, fetchFeedPage, type FeedPhoto } from '@/lib/feed';
+import { useRefreshGeneration } from '@/lib/refresh';
 import { useAsync } from '@/lib/use-async';
 
 type Feed = {
@@ -35,6 +36,7 @@ export default function FeedScreen() {
   const [attempt, setAttempt] = useState(0);
   const [viewing, setViewing] = useState<FeedPhoto | null>(null);
   const [gridWidth, setGridWidth] = useState(0);
+  const generation = useRefreshGeneration();
 
   useEffect(() => {
     let cancelled = false;
@@ -47,7 +49,7 @@ export default function FeedScreen() {
     return () => {
       cancelled = true;
     };
-  }, [category, attempt]);
+  }, [category, attempt, generation]);
 
   // A feed left from another category counts as still loading.
   const current = feed?.category === category ? feed : null;

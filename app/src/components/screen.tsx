@@ -1,6 +1,13 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useRef, type ComponentRef, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useRef, useState, type ComponentRef, type ReactNode } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -10,6 +17,7 @@ import {
   TAB_BAR_HEIGHT,
   TAB_BAR_SPACE,
 } from '@/constants/theme';
+import { triggerRefresh } from '@/lib/refresh';
 
 type ScreenProps = {
   children: ReactNode;
@@ -41,6 +49,15 @@ export function Screen({ children, footer, footerHeight = 0, inTabs = true }: Sc
     }, []),
   );
 
+  // Pulling the screen down from the top fetches its data again (see lib/refresh). The
+  // spinner shows briefly; the screen keeps what it shows until the fresh data arrives.
+  const [refreshing, setRefreshing] = useState(false);
+  function refresh() {
+    setRefreshing(true);
+    triggerRefresh();
+    setTimeout(() => setRefreshing(false), 800);
+  }
+
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
       <KeyboardAvoidingView
@@ -48,6 +65,15 @@ export function Screen({ children, footer, footerHeight = 0, inTabs = true }: Sc
         behavior={Platform.OS === 'android' ? 'padding' : undefined}>
         <ScrollView
           ref={scrollRef}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refresh}
+              colors={[Colors.accent]}
+              tintColor={Colors.accent}
+              progressBackgroundColor={Colors.surface}
+            />
+          }
           contentOffset={{ x: 0, y: 0 }}
           contentContainerStyle={[styles.content, { paddingBottom: bottomRoom }]}
           automaticallyAdjustKeyboardInsets

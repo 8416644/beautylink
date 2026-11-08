@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 
 import { useAuth } from './auth';
 import type { ProSummary } from './pros';
+import { useRefreshGeneration } from './refresh';
 import { supabase } from './supabase';
 
 // The signed-in client's saved pros, shared by every heart on screen so they all agree.
@@ -41,6 +42,7 @@ async function load(userId: string) {
 export function useFavoriteIds() {
   const { session } = useAuth();
   const userId = session?.user.id ?? null;
+  const generation = useRefreshGeneration();
   useEffect(() => {
     if (owner !== userId) {
       owner = userId;
@@ -50,6 +52,12 @@ export function useFavoriteIds() {
     }
     if (userId) load(userId);
   }, [userId]);
+  // A pull-to-refresh reads the saved list again.
+  useEffect(() => {
+    if (generation === 0 || !userId) return;
+    loadedFor = null;
+    load(userId);
+  }, [generation, userId]);
   return useSyncExternalStore(subscribe, () => ids);
 }
 

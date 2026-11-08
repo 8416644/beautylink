@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { useRefreshGeneration } from './refresh';
 import { supabase } from './supabase';
 
 export type Category = {
@@ -27,6 +28,7 @@ type CategoriesState =
 export function useCategories() {
   const [state, setState] = useState<CategoriesState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const generation = useRefreshGeneration();
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +39,7 @@ export function useCategories() {
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, [attempt, generation]);
 
   const reload = useCallback(() => {
     setState({ status: 'loading' });

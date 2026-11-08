@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { useRefreshGeneration } from './refresh';
 import { supabase } from './supabase';
 
 // A pro as clients see her, read from the public_pros view (approved pros only, no address).
@@ -108,6 +109,8 @@ export function useProsInCategory(categoryId: number | undefined) {
   const [result, setResult] = useState<ProsResult | null>(null);
   const [attempt, setAttempt] = useState(0);
   const key = `${categoryId}:${attempt}`;
+  // A pull-to-refresh fetches again but keeps the list on screen until the new one arrives.
+  const generation = useRefreshGeneration();
 
   useEffect(() => {
     if (categoryId === undefined) return;
@@ -119,7 +122,7 @@ export function useProsInCategory(categoryId: number | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [categoryId, key]);
+  }, [categoryId, key, generation]);
 
   // A result for an earlier category or attempt counts as still loading.
   const state: ProsState = result?.key === key ? result : { status: 'loading' };
