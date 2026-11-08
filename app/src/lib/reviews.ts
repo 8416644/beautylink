@@ -18,15 +18,16 @@ export const MAX_REVIEW_LENGTH = 1000;
 export async function fetchProReviews(proId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
-    .select('id, rating, body, pro_reply, created_at, profiles!reviews_client_user_id_fkey(full_name)')
+    .select('id, rating, body, pro_reply, created_at, author_name')
     .eq('pro_id', proId)
     .eq('is_hidden', false)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  type Row = Omit<Review, 'client_name'> & { profiles: { full_name: string } | null };
-  return (data as unknown as Row[]).map(({ profiles, ...review }) => ({
+  // Profiles are private; a review keeps its writer's first name itself (author_name).
+  type Row = Omit<Review, 'client_name'> & { author_name: string };
+  return (data as unknown as Row[]).map(({ author_name, ...review }) => ({
     ...review,
-    client_name: profiles?.full_name.trim().split(/\s+/)[0] || 'לקוחה',
+    client_name: author_name || 'לקוחה',
   }));
 }
 
@@ -34,14 +35,14 @@ export async function fetchProReviews(proId: string): Promise<Review[]> {
 export async function fetchReviewsAboutMe(proId: string): Promise<(Review & { is_hidden: boolean })[]> {
   const { data, error } = await supabase
     .from('reviews')
-    .select('id, rating, body, pro_reply, created_at, is_hidden, profiles!reviews_client_user_id_fkey(full_name)')
+    .select('id, rating, body, pro_reply, created_at, is_hidden, author_name')
     .eq('pro_id', proId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  type Row = Omit<Review, 'client_name'> & { is_hidden: boolean; profiles: { full_name: string } | null };
-  return (data as unknown as Row[]).map(({ profiles, ...review }) => ({
+  type Row = Omit<Review, 'client_name'> & { is_hidden: boolean; author_name: string };
+  return (data as unknown as Row[]).map(({ author_name, ...review }) => ({
     ...review,
-    client_name: profiles?.full_name.trim().split(/\s+/)[0] || 'לקוחה',
+    client_name: author_name || 'לקוחה',
   }));
 }
 
