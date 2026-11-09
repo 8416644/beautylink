@@ -2,11 +2,11 @@
 // once the web version is published, at the same addresses on the web for the app stores.
 // Written to match what the app actually collects; update both when that changes.
 
-// The address users write to about their information. Empty until BeautyLink's own
-// mailbox is opened; the screens then say it will be published soon.
-export const CONTACT_EMAIL = '';
+// The address users write to about their information (BeautyLink's own mailbox, which
+// also sends the app's emails through Supabase).
+export const CONTACT_EMAIL = 'BeautyLink.ai@gmail.com';
 
-export const LEGAL_UPDATED = '5 בנובמבר 2026';
+export const LEGAL_UPDATED = '8 בנובמבר 2026';
 
 export type LegalSection = { title: string; paragraphs: string[] };
 
