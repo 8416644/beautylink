@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { AdsStrip, ADS_STRIP_HEIGHT } from '@/components/ads-strip';
 import { CategoryImage } from '@/components/category-image';
@@ -41,6 +41,14 @@ export default function HomeScreen() {
   // Flattened: Link's asChild accepts a single style object, not a list.
   const tile = StyleSheet.flatten([styles.category, tileWidth !== undefined && { width: tileWidth }]);
 
+  // Free text: a name, a treatment or a place. Results open in the search tab.
+  const [query, setQuery] = useState('');
+  function submitSearch() {
+    const q = query.trim();
+    if (!q) return;
+    router.push({ pathname: '/search', params: { q } });
+  }
+
   return (
     <Screen footer={<AdsStrip />} footerHeight={ADS_STRIP_HEIGHT}>
       {/* Compact, so all the categories fit above the ads strip on a phone. */}
@@ -62,18 +70,30 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <Link href="/search" asChild>
-          <Pressable style={styles.search} accessibilityRole="search" accessibilityLabel="חיפוש">
-            <Icon
-              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
-              color={Colors.textSecondary}
-              size={20}
-            />
-            <Text muted style={styles.searchText}>
-              חיפוש בעלת מקצוע או שירות
-            </Text>
-          </Pressable>
-        </Link>
+        <View style={styles.search}>
+          <Icon
+            name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+            color={Colors.textSecondary}
+            size={20}
+          />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={submitSearch}
+            returnKeyType="search"
+            placeholder="חיפוש בעלת מקצוע, טיפול או עיר"
+            placeholderTextColor={Colors.textSecondary}
+            style={styles.searchInput}
+            accessibilityLabel="חיפוש"
+          />
+          {query.trim() ? (
+            <Pressable onPress={submitSearch} hitSlop={8} accessibilityRole="button" style={styles.searchGo}>
+              <Text variant="smallBold" style={styles.searchGoText}>
+                חיפוש
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
 
         <FeaturedProBar />
 
@@ -143,8 +163,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  searchText: {
+  searchInput: {
     flex: 1,
+    height: '100%',
+    fontFamily: Fonts.regular,
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: 'right',
+  },
+  searchGo: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.ink,
+  },
+  searchGoText: {
+    color: Colors.onInk,
   },
   sectionTitle: {
     marginTop: Spacing.two,

@@ -126,13 +126,17 @@ export default function FeedScreen() {
         <>
           <View style={styles.grid} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
             {current.photos.map((photo) => (
-              <Pressable
+              <View
                 key={photo.id}
-                style={StyleSheet.flatten([styles.tile, tileWidth !== undefined && { width: tileWidth }])}
-                onPress={() => setViewing(photo)}
-                accessibilityRole="button"
-                accessibilityLabel={`${photo.caption ?? 'עבודה'} של ${photo.pro_name}`}>
-                <Image source={{ uri: photo.media_url }} style={styles.photo} contentFit="cover" />
+                style={StyleSheet.flatten([styles.tile, tileWidth !== undefined && { width: tileWidth }])}>
+                {/* The photo and the like are separate buttons (a button inside a button
+                    breaks on the web). */}
+                <Pressable
+                  onPress={() => setViewing(photo)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${photo.caption ?? 'עבודה'} של ${photo.pro_name}`}>
+                  <Image source={{ uri: photo.media_url }} style={styles.photo} contentFit="cover" />
+                </Pressable>
                 <View style={styles.tileFoot}>
                   <Text variant="caption" muted numberOfLines={1} style={styles.tileName}>
                     {photo.pro_name}
@@ -144,7 +148,7 @@ export default function FeedScreen() {
                     </Text>
                   ) : null}
                 </View>
-              </Pressable>
+              </View>
             ))}
           </View>
           {current.more && (

@@ -1,27 +1,57 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { CategoryImage } from '@/components/category-image';
 import { FavoriteButton } from '@/components/favorite-button';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { fetchSubcategoriesOf, useCategories, type Category } from '@/lib/categories';
 import { useProsInCategory, type ProSummary } from '@/lib/pros';
+import { searchPros } from '@/lib/search';
 import { useAsync } from '@/lib/use-async';
 
 export default function SearchScreen() {
-  const { category: slug } = useLocalSearchParams<{ category?: string }>();
+  const { category: slug, q } = useLocalSearchParams<{ category?: string; q?: string }>();
   const { state: categoriesState, reload } = useCategories();
 
   const categories = categoriesState.status === 'ready' ? categoriesState.categories : [];
-  const selected = categories.find((c) => c.slug === slug);
+  const selected = q ? undefined : categories.find((c) => c.slug === slug);
+  // The typed text, kept in step with the address when the home screen sends a search.
+  const [text, setText] = useState({ from: q ?? '', value: q ?? '' });
+  const value = text.from === (q ?? '') ? text.value : (q ?? '');
+
+  function submit() {
+    const next = value.trim();
+    router.setParams({ q: next || undefined, category: undefined });
+  }
 
   return (
     <Screen>
       <Text variant="title">חיפוש</Text>
+
+      <View style={styles.searchBox}>
+        <Icon name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }} color={Colors.textSecondary} size={20} />
+        <TextInput
+          value={value}
+          onChangeText={(v) => setText({ from: q ?? '', value: v })}
+          onSubmitEditing={submit}
+          returnKeyType="search"
+          placeholder="שם, טיפול או עיר"
+          placeholderTextColor={Colors.textSecondary}
+          style={styles.searchInput}
+          accessibilityLabel="חיפוש חופשי"
+        />
+        {value.trim() ? (
+          <Pressable onPress={submit} hitSlop={8} accessibilityRole="button" style={styles.searchGo}>
+            <Text variant="smallBold" style={styles.searchGoText}>
+              חיפוש
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       {categoriesState.status === 'error' ? (
         <ErrorCard message="לא הצלחנו לטעון את הקטגוריות." onRetry={reload} />
@@ -33,7 +63,7 @@ export default function SearchScreen() {
               <Pressable
                 key={category.id}
                 style={[styles.chip, active && styles.chipActive]}
-                onPress={() => router.setParams({ category: category.slug })}
+                onPress={() => router.setParams({ category: category.slug, q: undefined })}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}>
                 <CategoryImage icon={category.icon ?? category.slug} size={24} />
@@ -46,7 +76,9 @@ export default function SearchScreen() {
         </View>
       )}
 
-      {categoriesState.status !== 'ready' ? null : selected ? (
+      {q ? (
+        <TextResults text={q} />
+      ) : categoriesState.status !== 'ready' ? null : selected ? (
         <CategoryResults category={selected} />
       ) : (
         <View style={styles.card}>
@@ -58,6 +90,27 @@ export default function SearchScreen() {
         </View>
       )}
     </Screen>
+  );
+}
+
+function TextResults({ text }: { text: string }) {
+  const { state, reload } = useAsync(`text:${text}`, () => searchPros(text));
+  return (
+    <View style={styles.section}>
+      <Text variant="heading">תוצאות עבור &quot;{text}&quot;</Text>
+      {state.status === 'loading' ? (
+        <Text muted>מחפשים…</Text>
+      ) : state.status === 'error' ? (
+        <ErrorCard message="החיפוש לא הצליח." onRetry={reload} />
+      ) : state.data.length === 0 ? (
+        <View style={styles.card}>
+          <Text variant="smallBold">לא מצאנו בעלות מקצוע שמתאימות</Text>
+          <Text muted>אפשר לנסות מילה אחרת, למשל שם של טיפול או עיר, או לבחור קטגוריה למעלה.</Text>
+        </View>
+      ) : (
+        state.data.map((pro) => <ProCard key={pro.user_id} pro={pro} treatments={[]} />)
+      )}
+    </View>
   );
 }
 
@@ -212,6 +265,34 @@ function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void 
 }
 
 const styles = StyleSheet.create({
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    height: 46,
+    paddingHorizontal: Spacing.four,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    fontFamily: Fonts.regular,
+    fontSize: 16,
+    color: Colors.text,
+    textAlign: 'right',
+  },
+  searchGo: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.ink,
+  },
+  searchGoText: {
+    color: Colors.onInk,
+  },
   subChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
