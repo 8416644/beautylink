@@ -41,7 +41,7 @@ export function FeedbackRow() {
     <View style={styles.row}>
       <Icon name={{ ios: 'bubble.left', android: 'chat_bubble', web: 'chat_bubble' }} color={Colors.accent} size={18} />
       <Text variant="small" style={styles.text}>
-        יש לך הערה או רעיון? נשמח לשמוע
+        יש לך הערה או רעיון? שתפי אותנו
       </Text>
       <Pressable
         onPress={sendFeedback}
