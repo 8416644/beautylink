@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { FeedbackRow } from '@/components/feedback-row';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -32,6 +33,7 @@ export default function ProfileScreen() {
           <Text>מתחברים כדי לקבוע תורים, לשמור מועדפות ולהצטרף כבעלת מקצוע.</Text>
         </View>
         <Button label="התחברות או הרשמה" onPress={() => router.push('/sign-in')} />
+        <FeedbackRow />
         <LegalLinks />
       </Screen>
     );
@@ -140,6 +142,7 @@ export default function ProfileScreen() {
         </View>
       )}
 
+      <FeedbackRow />
       <Button
         label="שינוי סיסמה"
         variant="secondary"
