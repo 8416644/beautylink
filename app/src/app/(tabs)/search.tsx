@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { CategoryImage } from '@/components/category-image';
@@ -7,8 +8,9 @@ import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import { useCategories, type Category } from '@/lib/categories';
+import { fetchSubcategoriesOf, useCategories, type Category } from '@/lib/categories';
 import { useProsInCategory, type ProSummary } from '@/lib/pros';
+import { useAsync } from '@/lib/use-async';
 
 export default function SearchScreen() {
   const { category: slug } = useLocalSearchParams<{ category?: string }>();
@@ -61,10 +63,36 @@ export default function SearchScreen() {
 
 function CategoryResults({ category }: { category: Category }) {
   const { state, retry } = useProsInCategory(category.id);
+  const { state: subsState } = useAsync(`subs:${category.id}`, () => fetchSubcategoriesOf(category.id));
+  const subs = subsState.status === 'ready' ? subsState.data : [];
+  // The chosen treatment, kept per category so switching category starts from "all".
+  const [chosen, setChosen] = useState<{ category: number; sub: number } | null>(null);
+  const sub = chosen?.category === category.id ? chosen.sub : null;
+  const subName = subs.find((s) => s.id === sub)?.name;
+
+  const pros =
+    state.status === 'ready'
+      ? sub === null
+        ? state.pros
+        : state.pros.filter((p) => p.subcategory_ids.includes(sub))
+      : [];
 
   return (
     <View style={styles.section}>
       <Text variant="heading">{category.name}</Text>
+      {subs.length > 1 && (
+        <View style={styles.subChips} accessibilityRole="radiogroup" accessibilityLabel="סינון לפי טיפול">
+          <SubChip label="הכול" active={sub === null} onPress={() => setChosen(null)} />
+          {subs.map((s) => (
+            <SubChip
+              key={s.id}
+              label={s.name}
+              active={sub === s.id}
+              onPress={() => setChosen({ category: category.id, sub: s.id })}
+            />
+          ))}
+        </View>
+      )}
       {state.status === 'loading' ? (
         <Text muted>טוענים בעלות מקצוע…</Text>
       ) : state.status === 'error' ? (
@@ -74,14 +102,39 @@ function CategoryResults({ category }: { category: Category }) {
           <Text variant="smallBold">עדיין אין בעלות מקצוע בקטגוריה הזו</Text>
           <Text muted>בעלות מקצוע חדשות מצטרפות כל הזמן. כדאי לבדוק שוב בקרוב.</Text>
         </View>
+      ) : pros.length === 0 ? (
+        <View style={styles.card}>
+          <Text variant="smallBold">עדיין אין בעלות מקצוע ל{subName ?? 'טיפול הזה'}</Text>
+          <Text muted>אפשר לבחור &quot;הכול&quot; או טיפול אחר.</Text>
+        </View>
       ) : (
-        state.pros.map((pro) => <ProCard key={pro.user_id} pro={pro} />)
+        pros.map((pro) => (
+          <ProCard
+            key={pro.user_id}
+            pro={pro}
+            treatments={subs.filter((s) => pro.subcategory_ids.includes(s.id)).map((s) => s.name)}
+          />
+        ))
       )}
     </View>
   );
 }
 
-function ProCard({ pro }: { pro: ProSummary }) {
+function SubChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      style={[styles.subChip, active && styles.subChipActive]}
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: active }}>
+      <Text variant="small" style={active && styles.subChipTextActive}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ProCard({ pro, treatments }: { pro: ProSummary; treatments: string[] }) {
   const place = [pro.neighborhood, pro.city].filter(Boolean).join(', ');
   const where = [
     pro.works_at_salon && 'בסלון',
@@ -119,6 +172,17 @@ function ProCard({ pro }: { pro: ProSummary }) {
       <Text variant="small" muted>
         {place}
       </Text>
+      {treatments.length > 0 && (
+        <View style={styles.tags}>
+          {treatments.map((name) => (
+            <View key={name} style={styles.treatment}>
+              <Text variant="caption" style={styles.treatmentText}>
+                {name}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
       {where.length > 0 && (
         <View style={styles.tags}>
           {where.map((label) => (
@@ -148,6 +212,34 @@ function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void 
 }
 
 const styles = StyleSheet.create({
+  subChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  subChip: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  subChipActive: {
+    backgroundColor: Colors.accentTint,
+    borderColor: Colors.accent,
+  },
+  subChipTextActive: {
+    color: Colors.accentOnTint,
+  },
+  treatment: {
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.background,
+  },
+  treatmentText: {
+    color: Colors.textSecondary,
+  },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',

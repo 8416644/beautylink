@@ -128,6 +128,11 @@ export default function ProfileScreen() {
           <Button label="ביקורות" variant="secondary" onPress={() => router.push('/admin-reviews')} />
           <Button label="תמונות" variant="secondary" onPress={() => router.push('/admin-photos')} />
           <Button
+            label="תחומים וטיפולים"
+            variant="secondary"
+            onPress={() => router.push('/admin-categories')}
+          />
+          <Button
             label="נתוני האפליקציה"
             variant="secondary"
             onPress={() => router.push('/admin-stats')}

@@ -20,6 +20,21 @@ export async function fetchCategories(): Promise<Category[]> {
   return data;
 }
 
+export type Subcategory = { id: number; category_id: number; name: string; sort: number; is_visible: boolean };
+
+// A category's treatments in their order. Clients get the visible ones only (the database
+// returns hidden ones to admins, so they are filtered here too unless asked for).
+export async function fetchSubcategoriesOf(categoryId: number, includeHidden = false): Promise<Subcategory[]> {
+  const { data, error } = await supabase
+    .from('subcategories')
+    .select('id, category_id, name, sort, is_visible')
+    .eq('category_id', categoryId)
+    .order('sort')
+    .order('id');
+  if (error) throw error;
+  return includeHidden ? data : data.filter((s) => s.is_visible);
+}
+
 type CategoriesState =
   | { status: 'loading' }
   | { status: 'error' }

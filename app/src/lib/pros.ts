@@ -16,15 +16,24 @@ export type ProSummary = {
   rating_count: number;
 };
 
-export async function fetchProsInCategory(categoryId: number): Promise<ProSummary[]> {
+// A pro in a category's search results, with the treatments (subcategories) she offers in it.
+export type ProInCategory = ProSummary & { subcategory_ids: number[] };
+
+export async function fetchProsInCategory(categoryId: number): Promise<ProInCategory[]> {
   // A pro belongs to a category through the subcategories she works in.
   const { data: links, error: linksError } = await supabase
     .from('pro_subcategories')
-    .select('pro_id, subcategories!inner(category_id)')
+    .select('pro_id, subcategory_id, subcategories!inner(category_id)')
     .eq('subcategories.category_id', categoryId);
   if (linksError) throw linksError;
 
-  const proIds = [...new Set(links.map((link) => link.pro_id as string))];
+  const subsByPro = new Map<string, number[]>();
+  for (const link of links) {
+    const list = subsByPro.get(link.pro_id as string) ?? [];
+    list.push(link.subcategory_id as number);
+    subsByPro.set(link.pro_id as string, list);
+  }
+  const proIds = [...subsByPro.keys()];
   if (proIds.length === 0) return [];
 
   const { data, error } = await supabase
@@ -36,7 +45,10 @@ export async function fetchProsInCategory(categoryId: number): Promise<ProSummar
     .in('user_id', proIds)
     .order('rating_avg', { ascending: false });
   if (error) throw error;
-  return data as unknown as ProSummary[];
+  return (data as unknown as ProSummary[]).map((pro) => ({
+    ...pro,
+    subcategory_ids: subsByPro.get(pro.user_id) ?? [],
+  }));
 }
 
 // Everything a client sees on a pro's page.
@@ -101,7 +113,7 @@ export async function fetchPublicPro(id: string): Promise<PublicPro | null> {
 
 type ProsResult =
   | { key: string; status: 'error' }
-  | { key: string; status: 'ready'; pros: ProSummary[] };
+  | { key: string; status: 'ready'; pros: ProInCategory[] };
 
 export type ProsState = { status: 'loading' } | ProsResult;
 
