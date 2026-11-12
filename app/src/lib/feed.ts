@@ -10,6 +10,9 @@ export type FeedPhoto = {
   created_at: string;
   pro_id: string;
   pro_name: string;
+  // Kept by the database after every like and comment.
+  like_count: number;
+  comment_count: number;
 };
 
 // Approved pros who work in a category (through its subcategories).
@@ -30,7 +33,7 @@ export async function fetchFeedPage(
 ): Promise<FeedPhoto[]> {
   let query = supabase
     .from('portfolio_items')
-    .select('id, media_url, caption, created_at, pro_id')
+    .select('id, media_url, caption, created_at, pro_id, like_count, comment_count')
     .eq('media_kind', 'image')
     .eq('is_hidden', false)
     .order('created_at', { ascending: false })

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
-import { FavoriteButton } from '@/components/favorite-button';
+import { LikeButton } from '@/components/like-button';
 import { PhotoViewer } from '@/components/photo-viewer';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
@@ -13,6 +13,8 @@ import { fetchShowingAds, type Ad } from '@/lib/ads';
 import { useCategories } from '@/lib/categories';
 import { FEED_PAGE, fetchFeedPage, type FeedPhoto } from '@/lib/feed';
 import { useRefreshGeneration } from '@/lib/refresh';
+import { useAuth } from '@/lib/auth';
+import { loadMyLikes, useLikes } from '@/lib/photo-social';
 import { useAsync } from '@/lib/use-async';
 
 type Feed = {
@@ -37,6 +39,14 @@ export default function FeedScreen() {
   const [viewing, setViewing] = useState<FeedPhoto | null>(null);
   const [gridWidth, setGridWidth] = useState(0);
   const generation = useRefreshGeneration();
+
+  // Fill the hearts of photos this user already liked.
+  const { session } = useAuth();
+  const photoIds = (feed?.photos ?? []).map((p) => p.id).join(',');
+  useLikes();
+  useEffect(() => {
+    if (session && photoIds) loadMyLikes(photoIds.split(','));
+  }, [session, photoIds]);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,9 +133,17 @@ export default function FeedScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${photo.caption ?? 'עבודה'} של ${photo.pro_name}`}>
                 <Image source={{ uri: photo.media_url }} style={styles.photo} contentFit="cover" />
-                <Text variant="caption" muted numberOfLines={1}>
-                  {photo.pro_name}
-                </Text>
+                <View style={styles.tileFoot}>
+                  <Text variant="caption" muted numberOfLines={1} style={styles.tileName}>
+                    {photo.pro_name}
+                  </Text>
+                  <LikeButton photoId={photo.id} count={photo.like_count} size={16} />
+                  {photo.comment_count > 0 ? (
+                    <Text variant="caption" muted>
+                      {photo.comment_count} תגובות
+                    </Text>
+                  ) : null}
+                </View>
               </Pressable>
             ))}
           </View>
@@ -150,7 +168,19 @@ export default function FeedScreen() {
               <Text variant="smallBold" style={styles.viewerName}>
                 {viewing.pro_name}
               </Text>
-              <FavoriteButton proId={viewing.pro_id} proName={viewing.pro_name} onPhoto />
+              <LikeButton photoId={viewing.id} count={viewing.like_count} light />
+              <Pressable
+                style={styles.viewerComments}
+                onPress={() => {
+                  const id = viewing.id;
+                  setViewing(null);
+                  router.push({ pathname: '/photo/[id]', params: { id } });
+                }}
+                accessibilityRole="link">
+                <Text variant="smallBold" style={styles.viewerName}>
+                  {viewing.comment_count > 0 ? `${viewing.comment_count} תגובות` : 'תגובה'}
+                </Text>
+              </Pressable>
               <Pressable
                 style={styles.viewerLink}
                 onPress={() => {
@@ -286,6 +316,18 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: Radius.small,
     backgroundColor: Colors.placeholder,
+  },
+  tileFoot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  tileName: {
+    flex: 1,
+  },
+  viewerComments: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
   },
   viewerFooter: {
     flexDirection: 'row',
