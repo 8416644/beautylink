@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { applyOptInAfterRedirect } from '@/lib/marketing';
 import { sessionFromUrl } from '@/lib/oauth';
 import { supabase } from '@/lib/supabase';
 
@@ -28,6 +29,11 @@ export default function AuthCallbackScreen() {
         // On the web the library may have finished the sign-in before this ran.
         const { data } = await supabase.auth.getSession();
         if (cancelled) return;
+        if (data.session) {
+          // The consent box ticked before Google sign-in left the page.
+          await applyOptInAfterRedirect(data.session.user.id).catch(() => {});
+          if (cancelled) return;
+        }
         if (signedIn || data.session) router.replace('/profile');
         else setFailed(true);
       });

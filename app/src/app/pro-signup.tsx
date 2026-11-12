@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { Checkbox } from '@/components/checkbox';
 import { Chip } from '@/components/chip';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
@@ -21,6 +22,7 @@ import {
   type Subcategory,
 } from '@/lib/pro-account';
 import { normalizeLink } from '@/lib/links';
+import { MARKETING_CONSENT_HINT, MARKETING_CONSENT_PRO, setMarketingOptIn } from '@/lib/marketing';
 import { photoProblem, pickerOptions } from '@/lib/upload';
 import { useAsync } from '@/lib/use-async';
 
@@ -89,6 +91,10 @@ type ProFormProps = {
 };
 
 function ProForm({ userId, existing, categories, subcategories }: ProFormProps) {
+  // Consent to advertising email, starting from what she chose before (unticked if never).
+  const { profile, reloadProfile } = useAuth();
+  const [marketingChoice, setMarketingChoice] = useState<boolean | null>(null);
+  const marketing = marketingChoice ?? profile?.marketing_opt_in ?? false;
   const [displayName, setDisplayName] = useState(existing?.display_name ?? '');
   const [bio, setBio] = useState(existing?.bio ?? '');
   const [years, setYears] = useState(existing?.years_experience?.toString() ?? '');
@@ -210,6 +216,10 @@ function ProForm({ userId, existing, categories, subcategories }: ProFormProps) 
       );
       // After the profile, so a new pro's row exists before her photo goes to her folder.
       if (coverChange) await saveProCover(userId, coverChange, existing?.cover_url ?? null);
+      if (marketingChoice !== null && marketingChoice !== (profile?.marketing_opt_in ?? false)) {
+        await setMarketingOptIn(userId, marketingChoice);
+        reloadProfile();
+      }
       if (status !== 'approved' && status !== 'pending') setStatus('pending');
       setSaved(true);
     } catch {
@@ -378,6 +388,12 @@ function ProForm({ userId, existing, categories, subcategories }: ProFormProps) 
         })}
       </Section>
 
+      <Checkbox
+        checked={marketing}
+        onChange={setMarketingChoice}
+        label={MARKETING_CONSENT_PRO}
+        hint={MARKETING_CONSENT_HINT}
+      />
       {problems.length > 0 && (
         <Text variant="small" muted>
           חסר: {problems.join(', ')}

@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { FeedbackRow } from '@/components/feedback-row';
@@ -7,6 +8,7 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { signOut, useAuth } from '@/lib/auth';
+import { setMarketingOptIn } from '@/lib/marketing';
 import { fetchOwnProProfile, type ProStatus } from '@/lib/pro-account';
 import { useAsync } from '@/lib/use-async';
 
@@ -135,6 +137,11 @@ export default function ProfileScreen() {
             onPress={() => router.push('/admin-categories')}
           />
           <Button
+            label="רשימת תפוצה"
+            variant="secondary"
+            onPress={() => router.push('/admin-marketing')}
+          />
+          <Button
             label="נתוני האפליקציה"
             variant="secondary"
             onPress={() => router.push('/admin-stats')}
@@ -142,6 +149,7 @@ export default function ProfileScreen() {
         </View>
       )}
 
+      <MarketingSwitch />
       <FeedbackRow />
       <Button
         label="שינוי סיסמה"
@@ -160,6 +168,50 @@ export default function ProfileScreen() {
       )}
       <LegalLinks />
     </Screen>
+  );
+}
+
+// Turns advertising email on or off; the database records when.
+function MarketingSwitch() {
+  const { session, profile, reloadProfile } = useAuth();
+  const [saving, setSaving] = useState<boolean | null>(null);
+  const [failed, setFailed] = useState(false);
+  if (!session || !profile) return null;
+  const userId = session.user.id;
+  const value = saving ?? profile.marketing_opt_in;
+
+  async function change(next: boolean) {
+    setSaving(next);
+    setFailed(false);
+    try {
+      await setMarketingOptIn(userId, next);
+      reloadProfile();
+    } catch {
+      setFailed(true);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  return (
+    <View style={styles.switchRow}>
+      <View style={styles.grow}>
+        <Text variant="small">קבלת עדכונים ומבצעים במייל</Text>
+        {failed ? (
+          <Text variant="caption" style={styles.switchError}>
+            לא הצלחנו לשמור. כדאי לנסות שוב.
+          </Text>
+        ) : null}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={change}
+        disabled={saving !== null}
+        trackColor={{ true: Colors.accent, false: Colors.border }}
+        thumbColor={Colors.surface}
+        accessibilityLabel="קבלת עדכונים ומבצעים במייל"
+      />
+    </View>
   );
 }
 
@@ -213,6 +265,20 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     color: Colors.textSecondary,
     textDecorationLine: 'underline',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.medium,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  switchError: {
+    color: Colors.accentPressed,
   },
   card: {
     gap: Spacing.three,

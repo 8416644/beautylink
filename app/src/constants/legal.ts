@@ -6,7 +6,7 @@
 // also sends the app's emails through Supabase).
 export const CONTACT_EMAIL = 'BeautyLink.ai@gmail.com';
 
-export const LEGAL_UPDATED = '8 בנובמבר 2026';
+export const LEGAL_UPDATED = '12 בנובמבר 2026';
 
 export type LegalSection = { title: string; paragraphs: string[] };
 
@@ -41,6 +41,7 @@ export const PRIVACY_POLICY: LegalSection[] = [
       'לשמירה על אפליקציה מכבדת וצנועה: צוות BeautyLink יכול להסתיר ביקורות או תמונות שאינן מתאימות.',
       'לנתונים כלליים על השימוש באפליקציה, כמו מספר כניסות והרשמות, בלי לזהות אף משתמשת.',
       'המידע לא נמכר ולא נמסר לאף אחד לצורכי פרסום.',
+      'עדכונים, מבצעים ופרסומות במייל נשלחים רק למי שהסכימה לכך במפורש, בסימון בזמן ההרשמה, בטופס בעלת המקצוע או במתג "קבלת עדכונים ומבצעים במייל" בפרופיל. ההסכמה אינה חובה, ונשמר מועד מתן ההסכמה. אפשר לבטל אותה בכל רגע במתג בפרופיל, או בתשובה "הסר" לכל מייל כזה.',
     ],
   },
   {

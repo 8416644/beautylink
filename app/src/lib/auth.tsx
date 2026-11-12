@@ -7,6 +7,8 @@ export type Profile = {
   id: string;
   full_name: string;
   role: 'client' | 'pro' | 'admin';
+  // Agreed to receive updates and advertising by email.
+  marketing_opt_in: boolean;
 };
 
 type AuthValue = {
@@ -15,14 +17,22 @@ type AuthValue = {
   session: Session | null;
   // The signed-in user's row in profiles; null while it loads.
   profile: Profile | null;
+  // Reads the profile again after the user changed it.
+  reloadProfile: () => void;
 };
 
-const AuthContext = createContext<AuthValue>({ loading: true, session: null, profile: null });
+const AuthContext = createContext<AuthValue>({
+  loading: true,
+  session: null,
+  profile: null,
+  reloadProfile: () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileVersion, setProfileVersion] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -42,20 +52,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     supabase
       .from('profiles')
-      .select('id, full_name, role')
+      // Every column, so the app keeps working on a database that does not yet have the
+      // newest ones.
+      .select('*')
       .eq('id', userId)
       .single()
-      .then(({ data }) => !cancelled && setProfile(data as Profile | null));
+      .then(
+        ({ data }) =>
+          !cancelled &&
+          setProfile(data ? ({ ...data, marketing_opt_in: data.marketing_opt_in === true } as Profile) : null),
+      );
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, profileVersion]);
 
   // A profile left over from a previous user does not count.
   const value: AuthValue = {
     loading,
     session,
     profile: profile?.id === userId ? profile : null,
+    reloadProfile: () => setProfileVersion((n) => n + 1),
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

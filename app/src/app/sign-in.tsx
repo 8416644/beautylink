@@ -3,12 +3,19 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { Checkbox } from '@/components/checkbox';
 import { GoogleLogo } from '@/components/google-logo';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TextField } from '@/components/text-field';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { authErrorMessage as errorMessage } from '@/lib/auth-errors';
+import {
+  MARKETING_CONSENT,
+  MARKETING_CONSENT_HINT,
+  rememberOptInForRedirect,
+  setMarketingOptIn,
+} from '@/lib/marketing';
 import { signInWithGoogle } from '@/lib/oauth';
 import { supabase } from '@/lib/supabase';
 
@@ -30,6 +37,8 @@ export default function SignInScreen() {
   const [forgot, setForgot] = useState(false);
   const [sentReset, setSentReset] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  // Consent to advertising email: empty until she ticks it herself, offered only when signing up.
+  const [marketing, setMarketing] = useState(false);
 
   const signUp = mode === 'sign-up';
   const canSubmit = email.trim() !== '' && password !== '' && (!signUp || fullName.trim() !== '');
@@ -43,7 +52,7 @@ export default function SignInScreen() {
         password,
         options: {
           // Read by handle_new_user to fill profiles.full_name.
-          data: { full_name: fullName.trim() },
+          data: { full_name: fullName.trim(), marketing_opt_in: marketing },
           // The confirmation link brings a web user back to the app.
           emailRedirectTo: Platform.OS === 'web' ? window.location.origin : undefined,
         },
@@ -65,7 +74,16 @@ export default function SignInScreen() {
     setGoogleBusy(true);
     setError(null);
     try {
-      if (await signInWithGoogle()) leave();
+      // Ticked before signing up with Google: saved once she is signed in.
+      const optIn = signUp && marketing;
+      rememberOptInForRedirect(optIn);
+      if (await signInWithGoogle()) {
+        if (optIn) {
+          const { data } = await supabase.auth.getSession();
+          if (data.session) await setMarketingOptIn(data.session.user.id, true).catch(() => {});
+        }
+        leave();
+      }
     } catch {
       setError('ההתחברות עם Google לא הצליחה. כדאי לנסות שוב.');
     } finally {
@@ -216,6 +234,14 @@ export default function SignInScreen() {
             {error}
           </Text>
         ) : null}
+        {signUp && (
+          <Checkbox
+            checked={marketing}
+            onChange={setMarketing}
+            label={MARKETING_CONSENT}
+            hint={MARKETING_CONSENT_HINT}
+          />
+        )}
         <Button
           label={signUp ? 'יצירת חשבון' : 'התחברות'}
           onPress={submit}
