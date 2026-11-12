@@ -86,6 +86,11 @@ export default function HomeScreen() {
             style={styles.searchInput}
             accessibilityLabel="חיפוש"
           />
+          {query ? (
+            <Pressable onPress={() => setQuery('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="מחיקת הכיתוב">
+              <Icon name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }} color={Colors.textSecondary} size={20} />
+            </Pressable>
+          ) : null}
           {query.trim() ? (
             <Pressable onPress={submitSearch} hitSlop={8} accessibilityRole="button" style={styles.searchGo}>
               <Text variant="smallBold" style={styles.searchGoText}>

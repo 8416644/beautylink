@@ -23,6 +23,12 @@ export default function SearchScreen() {
   const [text, setText] = useState({ from: q ?? '', value: q ?? '' });
   const value = text.from === (q ?? '') ? text.value : (q ?? '');
 
+  // The X empties the box and the results it was showing.
+  function clear() {
+    setText({ from: q ?? '', value: '' });
+    if (q) router.setParams({ q: undefined });
+  }
+
   function submit() {
     const next = value.trim();
     router.setParams({ q: next || undefined, category: undefined });
@@ -44,6 +50,11 @@ export default function SearchScreen() {
           style={styles.searchInput}
           accessibilityLabel="חיפוש חופשי"
         />
+        {value ? (
+          <Pressable onPress={clear} hitSlop={10} accessibilityRole="button" accessibilityLabel="מחיקת הכיתוב">
+            <Icon name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }} color={Colors.textSecondary} size={20} />
+          </Pressable>
+        ) : null}
         {value.trim() ? (
           <Pressable onPress={submit} hitSlop={8} accessibilityRole="button" style={styles.searchGo}>
             <Text variant="smallBold" style={styles.searchGoText}>
